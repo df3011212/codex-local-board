@@ -1,0 +1,11 @@
+# Local runtime records, logs, and reports
+/.runtime/
+
+# Per-user work state and configuration
+/state-v2.json
+/state.json
+/config.json
+
+# State writer locks and temporary files
+/.state-v2.json.*
+/.state.json.*
