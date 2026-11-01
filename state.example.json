@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "updated_at": null,
+  "demo": true,
+  "projects": [
+    {
+      "id": "website-demo",
+      "title": "範例：網站專案",
+      "phase": "尚未登記執行結果",
+      "summary": "這是可替換的示例，不代表任何真實任務已完成。",
+      "groups": [{"id": "delivery", "title": "交付關卡"}, {"id": "ui", "title": "介面關卡"}],
+      "tasks": [
+        {"id": "requirements", "title": "確認需求與驗收條件", "group": "delivery", "status": "pending", "detail": "完成並核對後，再明確登記為 done 或 passed。"},
+        {"id": "implementation", "title": "實作與測試", "group": "delivery", "status": "pending", "detail": "準備好源碼與測試通過是不同狀態。"},
+        {"id": "deployment", "title": "部署與啟動確認", "group": "delivery", "status": "pending", "detail": "尚未執行部署。"},
+        {"id": "ui-review", "title": "介面與鍵盤操作驗收", "group": "ui", "status": "pending", "detail": "依真實驗收結果更新。"}
+      ],
+      "agents": [{"id": "reviewer", "role": "範例：檢查協作者", "status": "not_started", "detail": "這是手動檢查點，並非即時工具事件。"}],
+      "events": []
+    },
+    {
+      "id": "automation-demo",
+      "title": "範例：自動化專案",
+      "phase": "尚未開始",
+      "summary": "使用上方選單切換專案。可新增其他專案及自訂群組。",
+      "groups": [{"id": "delivery", "title": "交付關卡"}],
+      "tasks": [{"id": "validate", "title": "驗證輸入與輸出", "group": "delivery", "status": "pending", "detail": "沒有關卡資料時顯示『尚無關卡』，不捏造完成比例。"}],
+      "agents": [],
+      "events": []
+    }
+  ]
+}

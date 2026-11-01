@@ -1,0 +1,20 @@
+{
+  "name": "codex-agent-view",
+  "interface": {
+    "displayName": "Codex Agent View"
+  },
+  "plugins": [
+    {
+      "name": "codex-agent-view",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "name": "codex-agent-view",
+  "version": "0.5.6",
+  "description": "A read-only Codex plugin for monitoring live tasks and subagents in your browser. Open each view with one lightweight @codex-agent-view invocation. Once open, live monitoring runs locally with no additional model calls.",
+  "type": "module",
+  "main": "./src/core/index.mjs",
+  "exports": "./src/core/index.mjs",
+  "bin": {
+    "codex-agent-view": "bin/codex-agent-view.mjs"
+  },
+  "files": [
+    ".agents/",
+    ".codex-plugin/",
+    "assets/",
+    "bin/",
+    "hooks/",
+    "public/",
+    "scripts/auto-start-monitor.mjs",
+    "scripts/capture-hook.mjs",
+    "scripts/send-hook.mjs",
+    "skills/",
+    "src/",
+    "README.md",
+    "README.ko.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "validate:plugin": "node scripts/validate-plugin.mjs",
+    "check": "npm test && npm run validate:plugin && npm pack --dry-run --cache ./node_modules/.cache/npm",
+    "prepublishOnly": "npm run check",
+    "start": "node bin/codex-agent-view.mjs start",
+    "doctor": "node bin/codex-agent-view.mjs doctor",
+    "install:plugin": "node bin/codex-agent-view.mjs install",
+    "uninstall:plugin": "node bin/codex-agent-view.mjs uninstall"
+  },
+  "keywords": [
+    "codex",
+    "openai-codex",
+    "codex-plugin",
+    "ai-agents",
+    "multi-agent",
+    "subagents",
+    "agent-monitoring",
+    "developer-tools",
+    "observability",
+    "local-first",
+    "privacy-first",
+    "read-only",
+    "npm-package"
+  ],
+  "author": "Junho Yoon",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/JunhoYoon95/codex-agent-view#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JunhoYoon95/codex-agent-view.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JunhoYoon95/codex-agent-view/issues"
+  },
+  "packageManager": "npm@11.13.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

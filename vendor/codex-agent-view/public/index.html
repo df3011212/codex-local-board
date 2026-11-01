@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta
+      name="description"
+      content="即時查看 Codex 任務進度與參與工作的子代理。"
+      id="meta-description"
+    >
+    <title>Codex 代理工作看板</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content" data-i18n="skipToContent">跳至主要內容</a>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Codex 代理工作看板首頁" data-i18n-aria-label="brandHome">
+          <span class="brand-mark" aria-hidden="true">CA</span>
+          <span>
+            <strong>Codex 代理工作看板</strong>
+            <small data-i18n="brandSubtitle">即時工作總覽</small>
+          </span>
+        </a>
+
+        <div class="topbar-actions">
+          <label class="language-field" for="language-select">
+            <span data-i18n="languageLabel">語言</span>
+            <select id="language-select" name="language">
+              <option value="zh-TW">繁體中文</option>
+              <option value="en">English</option>
+              <option value="ko">한국어</option>
+              <option value="es">Español</option>
+            </select>
+          </label>
+          <div
+            class="connection-pill"
+            id="connection-status"
+            data-status="connecting"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <span class="connection-dot" aria-hidden="true"></span>
+            <span id="connection-label" data-i18n="connectionConnecting">正在連線至本機狀態</span>
+          </div>
+        </div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="hero" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow" data-i18n="heroEyebrow">CODEX 即時工作</p>
+            <h1 id="page-title" data-i18n="heroTitle">一眼掌握目前工作進度</h1>
+            <p class="hero-copy" data-i18n="heroCopy">集中查看 Codex 正在處理的任務、參與的子代理，以及各項工作的最近活動。</p>
+          </div>
+
+          <dl class="freshness" aria-label="更新資訊" data-i18n-aria-label="freshnessAria">
+            <div>
+              <dt data-i18n="lastUpdatedLabel">最近更新</dt>
+              <dd id="last-updated" data-i18n="notYet">尚未收到</dd>
+            </div>
+            <div>
+              <dt data-i18n="refreshIntervalLabel">更新間隔</dt>
+              <dd data-i18n="twoSeconds">每 2 秒</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="metrics" aria-label="任務狀態摘要" data-i18n-aria-label="metricsAria">
+          <article class="metric-card">
+            <p data-i18n="parentTasks">工作項目</p>
+            <strong id="metric-sessions">0</strong>
+            <span data-i18n="currentlyObserved">目前觀察到的工作</span>
+          </article>
+          <article class="metric-card metric-running">
+            <p data-i18n="runningAgents">活動中的代理</p>
+            <strong id="metric-running">0</strong>
+            <span data-i18n="workingNow">正在處理工作</span>
+          </article>
+          <article class="metric-card metric-waiting">
+            <p data-i18n="waitingStatus">等待中</p>
+            <strong id="metric-waiting">0</strong>
+            <span data-i18n="waitingExplanation">等待輸入或下一個步驟</span>
+          </article>
+          <article class="metric-card metric-completed">
+            <p data-i18n="completedAgents">已完成的代理</p>
+            <strong id="metric-completed">0</strong>
+            <span data-i18n="currentView">目前看板內的數量</span>
+          </article>
+        </section>
+
+        <section class="workspace" aria-labelledby="sessions-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="liveWork">即時工作</p>
+              <h2 id="sessions-heading" data-i18n="sessionsHeading">任務與參與的代理</h2>
+            </div>
+            <p id="results-summary" class="results-summary" role="status" aria-live="polite">
+              <span data-i18n="loadingState">正在載入狀態。</span>
+            </p>
+          </div>
+
+          <form
+            class="toolbar"
+            role="search"
+            aria-label="篩選自動觀察到的任務與參與代理"
+            data-i18n-aria-label="toolbarAria"
+            hidden
+          >
+            <div class="field field-search">
+              <label for="session-search" data-i18n="searchLabel">篩選清單（選填）</label>
+              <input
+                id="session-search"
+                name="query"
+                type="search"
+                placeholder="搜尋任務或代理"
+                data-i18n-placeholder="searchPlaceholder"
+                autocomplete="off"
+                spellcheck="false"
+              >
+            </div>
+            <div class="field">
+              <label for="status-filter" data-i18n="statusFilterLabel">工作狀態篩選（選填）</label>
+              <select id="status-filter" name="status">
+                <option value="all" data-i18n="statusAll">全部狀態</option>
+                <option value="running" data-i18n="statusRunning">執行中</option>
+                <option value="waiting" data-i18n="statusWaiting">等待中</option>
+                <option value="completed" data-i18n="statusCompleted">已完成</option>
+                <option value="completion_not_observed" data-i18n="statusCompletionNotObserved">尚未確認結束</option>
+                <option value="interrupted" data-i18n="statusInterrupted">已中斷</option>
+                <option value="unknown" data-i18n="statusUnknown">狀態未知</option>
+              </select>
+            </div>
+          </form>
+
+          <div id="state-message" class="state-message" role="status" aria-live="polite">
+            <strong data-i18n="loadingState">正在載入狀態。</strong>
+            <span data-i18n="connectingCopy">正在將此瀏覽器連線至這台電腦上的 Codex 本機監視器。</span>
+          </div>
+
+          <ul id="session-list" class="session-list" aria-label="Codex 工作清單" data-i18n-aria-label="sessionListAria" hidden></ul>
+        </section>
+      </main>
+
+      <footer>
+        <p data-i18n="privacyPrompt">此看板只顯示縮短的需求與代理工作摘要，不顯示完整需求或工具輸入內容。</p>
+        <p data-i18n="privacyLocal">資料僅從這台電腦的本機監視器唯讀取得。</p>
+      </footer>
+    </div>
+  </body>
+</html>

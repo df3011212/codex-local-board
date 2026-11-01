@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "title": "本機任務進度看板",
+  "subtitle": "依明確登記的驗收關卡顯示進度，每五秒讀取本機資料。",
+  "poll_seconds": 5,
+  "complete_statuses": ["done", "passed", "frozen"],
+  "show_agents": true,
+  "show_events": true
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Codex Agent View</title>
+  <desc id="description">An eye-shaped local monitor mark connecting a parent task to three agent nodes.</desc>
+  <rect width="512" height="512" rx="120" fill="#123f35"/>
+  <path d="M79 256c39-76 99-114 177-114s138 38 177 114c-39 76-99 114-177 114S118 332 79 256Z" fill="none" stroke="#f4f7f5" stroke-width="28" stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="52" fill="#f4f7f5"/>
+  <circle cx="256" cy="256" r="23" fill="#2e9b78"/>
+  <path d="M256 142V99M184 161l-25-37M328 161l25-37" fill="none" stroke="#7ed8b5" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="256" cy="81" r="20" fill="#f4f7f5"/>
+  <circle cx="146" cy="106" r="20" fill="#f4f7f5"/>
+  <circle cx="366" cy="106" r="20" fill="#f4f7f5"/>
+</svg>

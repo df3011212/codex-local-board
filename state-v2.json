@@ -1,0 +1,366 @@
+{
+  "schema_version": 1,
+  "source": "agent_semantic_reports",
+  "updated_at": "2026-11-01T18:17:35.479Z",
+  "demo": false,
+  "projects": [
+    {
+      "id": "01a18bfe-6fce-7c51-b45d-b45c8d973fc6",
+      "semantic_version": 2,
+      "session_id": "01a18bfe-6fce-7c51-b45d-b45c8d973fc6",
+      "title": "每個對話都能看懂的自動進度看板",
+      "goal": "讓每個 Codex 聊天室自動顯示需求、已完成成果、目前工作、下一步、可驗證關卡與子代理分工。介面統一繁體中文，完成後更新公開 GitHub 專案。",
+      "current": "依你的驗收調整左欄：只顯示一行 Codex 原始對話標題，移除進度摘要和重複下拉選單；正在串接原生名稱來源。",
+      "next": "確認每個對話名稱與 Codex 完全一致，套用精簡左欄後完成 GitHub 來源核對。",
+      "summary": "新對話自動同步已實測通過；目前處理你提出的原生標題與精簡左欄要求。",
+      "phase": "看板 V2 · 本機啟用與發布驗證",
+      "groups": [
+        {
+          "id": "core",
+          "title": "介面與自動同步核心"
+        },
+        {
+          "id": "release",
+          "title": "本機啟用與 GitHub 發布"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "ui",
+          "title": "清楚呈現每個對話的目標、關卡與分工",
+          "group": "core",
+          "status": "passed",
+          "detail": "桌面與手機版驗證；原始工具名稱與識別碼收在進階資訊。",
+          "evidence": [
+            {
+              "label": "13 項介面與 7 項真 Node 整合驗證通過",
+              "path": "work/board-v2-review/design-evidence.json"
+            }
+          ]
+        },
+        {
+          "id": "backend",
+          "title": "每對話獨立回報與父子代理隔離",
+          "group": "core",
+          "status": "passed",
+          "detail": "使用真實對話 UUID，完成關卡必須提供證據；沒有關卡就不猜百分比。",
+          "evidence": [
+            {
+              "label": "Node 12 項測試通過，含 SQLite 觀察器整合",
+              "path": "work/board-v2-node-tests.log"
+            }
+          ]
+        },
+        {
+          "id": "observer",
+          "title": "既有聊天室自動取得公開進度摘要",
+          "group": "core",
+          "status": "passed",
+          "detail": "Windows 原生路徑、公開訊息範圍、敏感內容過濾、快取與容量已驗證；既有對話沒有關卡時保持待同步。",
+          "evidence": [
+            {
+              "label": "觀察器 9 項測試通過"
+            }
+          ]
+        },
+        {
+          "id": "portable",
+          "title": "可攜桌面啟動與安全停止",
+          "group": "core",
+          "status": "passed",
+          "detail": "沿用桌面同資料夾 Node；不依賴 AppData 的輔助腳本。",
+          "evidence": [
+            {
+              "label": "真可攜版本 7 項啟動與同步檢查通過",
+              "path": "work/board-v2-portable-integration-proof.json"
+            }
+          ]
+        },
+        {
+          "id": "guidance",
+          "title": "啟用桌面新版與全域自動同步指導",
+          "group": "release",
+          "status": "passed",
+          "detail": "桌面入口已改為本機 8787，保留原始 runtime/vendor 與狀態；全域指導已備份安裝且重複安裝不改寫。",
+          "evidence": [
+            {
+              "label": "正式桌面啟動與全域指導驗證",
+              "path": "work/board-v2-global-guidance-proof.json"
+            }
+          ]
+        },
+        {
+          "id": "fresh",
+          "title": "真實新任務自動回報驗證",
+          "group": "release",
+          "status": "passed",
+          "detail": "真正全新 Codex 任務在提示完全未提看板的情況下，自行同步同一對話 UUID、目標與附證據的成果。",
+          "evidence": [
+            {
+              "label": "新對話自動同步 10 項檢查通過",
+              "path": "work/board-v2-fresh-task/verification-proof.json"
+            }
+          ]
+        },
+        {
+          "id": "publish",
+          "title": "更新 GitHub 並核對全部公開檔案",
+          "group": "release",
+          "status": "in_progress",
+          "detail": "只發布通用來源與合成測試資料，私人進度及遊戲資料不公開。",
+          "evidence": []
+        },
+        {
+          "id": "native_titles",
+          "title": "左欄沿用 Codex 原始對話標題並精簡成單行",
+          "group": "core",
+          "status": "in_progress",
+          "detail": "使用 Codex 的名稱索引，不把需求全文或代理另取的工作名稱當成對話標題。",
+          "evidence": []
+        }
+      ],
+      "completed": [
+        {
+          "title": "新版繁體中文介面已完成驗證",
+          "detail": "直接看需求、目前工作、下一步及成果，並支援切換聊天室。",
+          "evidence": [
+            {
+              "label": "桌面與手機版介面檢查通過"
+            }
+          ]
+        },
+        {
+          "title": "開源專案已有可用 V1",
+          "detail": "這次會更新同一個專案為自動語意看板 V2。",
+          "evidence": [
+            {
+              "label": "公開 GitHub 專案",
+              "url": "https://github.com/df3011212/codex-local-board"
+            }
+          ]
+        },
+        {
+          "title": "新聊天室會自行回報語意進度",
+          "detail": "已用全新獨立任務驗證，沒有手動代它填看板。",
+          "evidence": [
+            {
+              "label": "真實新對話自動回報 10 項檢查通過"
+            }
+          ]
+        }
+      ],
+      "agents": [
+        {
+          "id": "server_research",
+          "session_id": "01a18bff-894c-7663-9282-b83e1be6f0a9",
+          "role": "服務與自動回報",
+          "assignment": "服務與自動回報驗證已完成；新增 Codex 原始對話名稱來源與重命名同步。",
+          "current": "Codex 原生聊天室名稱與名單修正已部署，29 項測試通過",
+          "next": "完成正式畫面核對與交付",
+          "status": "done",
+          "detail": "",
+          "updated_at": "2026-11-01T18:17:35.479Z",
+          "evidence": [
+            {
+              "label": "原生標題、名單與後端 29/29 測試通過",
+              "path": "C:\\Users\\USER\\Documents\\Codex\\2026-10-30\\a-program-files-chinesegamer-wlonline\\work\\board-native-titles-tests.log"
+            },
+            {
+              "label": "正式看板原生名稱部署與既有資料保留核對",
+              "path": "C:\\Users\\USER\\Documents\\Codex\\2026-10-30\\a-program-files-chinesegamer-wlonline\\work\\board-native-titles-deployment-proof.json"
+            }
+          ],
+          "owner_session_id": "01a18bff-894c-7663-9282-b83e1be6f0a9"
+        },
+        {
+          "id": "admin_zh_tw",
+          "session_id": "01a18c0d-4527-7fc1-a50b-4ae716a73f77",
+          "role": "介面設計與驗證",
+          "assignment": "依你的驗收把左欄改為 Codex 式單行對話清單。",
+          "current": "單行原生對話名稱清單已完成；DOM與桌面／390px共7項瀏覽器檢查通過。",
+          "next": "等待桌面同步原生名稱來源後做最後只讀驗證。",
+          "status": "source_ready",
+          "detail": "",
+          "updated_at": "2026-11-01T18:11:20.437Z",
+          "evidence": [
+            {
+              "label": "精簡清單與原生名稱驗證通過",
+              "path": "work/board-sidebar-review/browser-verification.json"
+            }
+          ],
+          "owner_session_id": "01a18c0d-4527-7fc1-a50b-4ae716a73f77"
+        },
+        {
+          "id": "mall_render_review",
+          "session_id": "01a19785-9666-7f91-a07e-c4f1df1a1fa5",
+          "role": "桌面入口與全域指導",
+          "assignment": "可攜啟動、全域同步指導、文件與安裝驗證。",
+          "current": "桌面新版與全域同步指導已啟用，正在整理部署驗證。",
+          "next": "確認最後來源雜湊與使用文件。",
+          "status": "in_progress",
+          "detail": "",
+          "updated_at": "2026-11-01T18:07:33.202Z",
+          "evidence": [
+            {
+              "label": "部署與來源雜湊驗證",
+              "path": "work/board-v2-deployment-proof.json"
+            },
+            {
+              "label": "真正新任務自主回報10項通過",
+              "path": "work/board-v2-fresh-task/verification-proof.json"
+            },
+            {
+              "label": "最終可攜整合8項通過",
+              "path": "work/board-v2-portable-integration-proof.json"
+            }
+          ],
+          "owner_session_id": "01a19785-9666-7f91-a07e-c4f1df1a1fa5"
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-01T17:55:24.912Z",
+          "text": "看板是目前唯一優先工作；遊戲技能上限問題與檔案清理仍保留待辦。",
+          "kind": "semantic"
+        },
+        {
+          "at": "2026-11-01T17:58:43.722Z",
+          "text": "看板是目前唯一優先工作；遊戲技能上限問題與檔案清理仍保留待辦。",
+          "kind": "semantic"
+        },
+        {
+          "at": "2026-11-01T18:01:54.078Z",
+          "text": "看板是目前唯一優先工作；遊戲技能上限問題與檔案清理仍保留待辦。",
+          "kind": "semantic"
+        },
+        {
+          "at": "2026-11-01T18:07:33.202Z",
+          "text": "新對話自動同步已實測通過；目前處理你提出的原生標題與精簡左欄要求。",
+          "kind": "semantic"
+        }
+      ],
+      "metrics": [
+        {
+          "label": "Node 核心測試",
+          "value": 12,
+          "unit": "項通過"
+        },
+        {
+          "label": "介面與真服務檢查",
+          "value": 20,
+          "unit": "項通過"
+        },
+        {
+          "label": "可攜啟動整合",
+          "value": 7,
+          "unit": "項通過"
+        },
+        {
+          "label": "真新對話自動同步",
+          "value": 10,
+          "unit": "項通過"
+        }
+      ],
+      "updated_at": "2026-11-01T18:07:33.202Z",
+      "sync": {
+        "status": "synced",
+        "reported_at": "2026-11-01T18:07:33.202Z"
+      },
+      "history_dropped": 0
+    },
+    {
+      "id": "01a19844-3d53-7b71-a934-fc0ee5e53546",
+      "semantic_version": 2,
+      "session_id": "01a19844-3d53-7b71-a934-fc0ee5e53546",
+      "title": "隔離合成檔案測試",
+      "goal": "在目前資料夾建立 UTF-8 文字檔並完成重讀與 SHA256 驗證",
+      "current": "兩個產物已完成並通過獨立驗證",
+      "next": "交付測試產物",
+      "summary": "todo-result.txt 與 verification.json 已建立；嚴格 UTF-8、內容與 SHA256 比對均通過。共用工作狀態工具寫入仍受核准政策限制，待同步。",
+      "phase": "驗收完成",
+      "groups": [
+        {
+          "id": "delivery",
+          "title": "檔案驗收"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "create",
+          "title": "建立繁體中文 UTF-8 文字檔",
+          "group": "delivery",
+          "status": "passed",
+          "detail": "包含兩個步驟與固定文字「合成資料已建立」。",
+          "evidence": [
+            {
+              "label": "UTF-8 文字檔",
+              "path": "todo-result.txt"
+            },
+            {
+              "label": "獨立重讀與嚴格 UTF-8 解碼通過"
+            }
+          ]
+        },
+        {
+          "id": "verify",
+          "title": "重讀檢查與 SHA256 驗證",
+          "group": "delivery",
+          "status": "passed",
+          "detail": "JSON 三欄位格式正確，passed 為 true，SHA256 為實測 64 位雜湊。",
+          "evidence": [
+            {
+              "label": "驗證報告",
+              "path": "verification.json"
+            },
+            {
+              "label": "獨立重算 SHA256：510065d5467ef44680ea25fa89503ee634de50cc2c2212fe9868e3b28cda9e51，與報告一致"
+            }
+          ]
+        }
+      ],
+      "completed": [],
+      "agents": [
+        {
+          "id": "verification_audit",
+          "session_id": null,
+          "role": "獨立驗證",
+          "assignment": "只讀核對兩個產物與 SHA256",
+          "current": "獨立驗證通過",
+          "next": "驗收完成",
+          "status": "done",
+          "detail": "",
+          "updated_at": "2026-11-01T18:01:01.848Z",
+          "evidence": [
+            {
+              "label": "嚴格 UTF-8、繁體中文兩步、固定文字、JSON 三欄位與實測 SHA256 全數相符"
+            }
+          ]
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-01T18:00:23.031Z",
+          "text": "已確認兩個驗收步驟；共用工作狀態寫入受工具核准政策限制，改以看板記錄。",
+          "kind": "semantic"
+        },
+        {
+          "at": "2026-11-01T18:00:47.422Z",
+          "text": "文字內容、嚴格 UTF-8 解碼與位元組往返檢查已通過，驗證 JSON 已建立。",
+          "kind": "semantic"
+        },
+        {
+          "at": "2026-11-01T18:01:01.848Z",
+          "text": "todo-result.txt 與 verification.json 已建立；嚴格 UTF-8、內容與 SHA256 比對均通過。共用工作狀態工具寫入仍受核准政策限制，待同步。",
+          "kind": "semantic"
+        }
+      ],
+      "metrics": [],
+      "updated_at": "2026-11-01T18:01:01.848Z",
+      "sync": {
+        "status": "synced",
+        "reported_at": "2026-11-01T18:01:01.848Z"
+      },
+      "history_dropped": 0
+    }
+  ]
+}

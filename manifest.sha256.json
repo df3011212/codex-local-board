@@ -1,0 +1,248 @@
+{
+  "board_version": 2,
+  "node_version": "24.22.2",
+  "agent_view_version": "0.5.6",
+  "primary_entry": "Open-Board.cmd",
+  "advanced_entry": "Open-All-Agents.cmd",
+  "primary_port": 8787,
+  "source_files_copied": [
+    "Close-Board.cmd",
+    "LICENSE",
+    "Open-Board.cmd",
+    "README.md",
+    "agent_report.mjs",
+    "board-node.mjs",
+    "codex-observer.mjs",
+    "codex-titles.mjs",
+    "config.example.json",
+    "docs/agent-guidance.template.md",
+    "install-agent-guidance.mjs",
+    "open-board.mjs",
+    "state.example.json",
+    "web/app.js",
+    "web/index.html",
+    "web/styles.css"
+  ],
+  "protected_files_unchanged": 26,
+  "files": [
+    {
+      "path": "Close-Board.cmd",
+      "size": 253,
+      "sha256": "47b609fa21abb2f04952f78c9412d32d2b23fd3dcc242804435f838f5ae99190"
+    },
+    {
+      "path": "LICENSE",
+      "size": 1087,
+      "sha256": "438c57a7317e4dcc8200860d81d1f276e8bfc64bfff9b22f5e6baf1dc510f868"
+    },
+    {
+      "path": "Open-All-Agents.cmd",
+      "size": 710,
+      "sha256": "c04b6ddf723a1af986cc9dd18699d59bdaad79b1e255f601b87e108c5c3cd2cf"
+    },
+    {
+      "path": "Open-Board.cmd",
+      "size": 253,
+      "sha256": "38041d73b08fca355b28a9d200fdf8fbc4e4d1427c9ebd41b1fdf2fbf3f17a16"
+    },
+    {
+      "path": "README.md",
+      "size": 20794,
+      "sha256": "457c3ba60f999f03a20c817412f040ccc60f7a004b61a957878c611d9e8c6b02"
+    },
+    {
+      "path": "agent_report.mjs",
+      "size": 6724,
+      "sha256": "6ee6f35461a6c6c2048f20507d171139cfc18b7bc26a453dc72e43d9d50534e8"
+    },
+    {
+      "path": "board-node.mjs",
+      "size": 24041,
+      "sha256": "93392a376c1083a35b76036b78bfce4d68d16b2e7a1346cdd23ed7289e1b7d88"
+    },
+    {
+      "path": "codex-observer.mjs",
+      "size": 13462,
+      "sha256": "2e3127cf702956562d58109084bf1c6b3fd5b9809d1992e88d3651059cb71846"
+    },
+    {
+      "path": "codex-titles.mjs",
+      "size": 4881,
+      "sha256": "5b2623026f3836a13ffddebe056f1a83cf37c3bccb3fd8627e36ad3c4ed76eb3"
+    },
+    {
+      "path": "config.example.json",
+      "size": 278,
+      "sha256": "9b6800bb97aa58b604effa5ee8b76610478139937e66be6135e1f456587c861c"
+    },
+    {
+      "path": "docs/agent-guidance.template.md",
+      "size": 2319,
+      "sha256": "a850991685123c318811ce8e2520751a2ada3a1d628a0f33eef36f7e20e2496e"
+    },
+    {
+      "path": "install-agent-guidance.mjs",
+      "size": 9678,
+      "sha256": "5dbbbbae5fe6dec184adeb2619c286813c887ccb47310034a23f380e55363332"
+    },
+    {
+      "path": "open-board.mjs",
+      "size": 9972,
+      "sha256": "d6c2ae7caf6955867281bad24c54da3318ab1a302b93b2d3bc02837b7fee193d"
+    },
+    {
+      "path": "runtime/LICENSE",
+      "size": 160555,
+      "sha256": "ed34dd8e3f0a78dbaf00d0444ce8e285b015b765379c2e17880455f70370f8e9"
+    },
+    {
+      "path": "runtime/node.exe",
+      "size": 93922624,
+      "sha256": "1c331340fa6cac5e4294725959070a143fa0507195a78ad77eed7943f719aac9"
+    },
+    {
+      "path": "state.example.json",
+      "size": 1759,
+      "sha256": "fa257fb49efb78c6e1b4f05615025d2ecf4afe324858f6bc47f3dee857e017cd"
+    },
+    {
+      "path": "vendor/codex-agent-view/.agents/plugins/marketplace.json",
+      "size": 370,
+      "sha256": "417ec832efe652f30df688fd3628399df243d16b1aefe4480fdbb0a4d6f35d03"
+    },
+    {
+      "path": "vendor/codex-agent-view/.codex-plugin/plugin.json",
+      "size": 1937,
+      "sha256": "2f2ec4de9536589f79c7e4858ccad1ee0cdc3487a06c8dfb1b2c014715efe6a7"
+    },
+    {
+      "path": "vendor/codex-agent-view/LICENSE",
+      "size": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "vendor/codex-agent-view/NOTICE",
+      "size": 43,
+      "sha256": "0f437b69610f3cc931774365708dff0c3ef1809e4af5257421d3b98cf90db47a"
+    },
+    {
+      "path": "vendor/codex-agent-view/README.ko.md",
+      "size": 9353,
+      "sha256": "9b70441725cb945f1cba3dc4b0753622de354c19025604d11f9b9ef6808650c3"
+    },
+    {
+      "path": "vendor/codex-agent-view/README.md",
+      "size": 8099,
+      "sha256": "d6b4f6153f4dc5653fe1b5fdeaf72fbc8ef70e50afb22e0cb750dcf7fa628451"
+    },
+    {
+      "path": "vendor/codex-agent-view/assets/logo-dark.svg",
+      "size": 948,
+      "sha256": "1a42fe92c9faf54f94fa303fdf148b53931338c5e3295af429919f9aa6d69647"
+    },
+    {
+      "path": "vendor/codex-agent-view/assets/logo.svg",
+      "size": 948,
+      "sha256": "6699ec97ab6803dcf23d843de6b1a0afb7bec28389959769e0856a01320299d7"
+    },
+    {
+      "path": "vendor/codex-agent-view/bin/codex-agent-view.mjs",
+      "size": 38122,
+      "sha256": "d00f3945136748b4e16838da551ec01c8ce76b059d59088f559326a1534a8f3e"
+    },
+    {
+      "path": "vendor/codex-agent-view/hooks/hooks.json",
+      "size": 2268,
+      "sha256": "72c1dcb87e23dd585d0eb10c126f2d9fe291c3a08c41478766fb2d28239b0d25"
+    },
+    {
+      "path": "vendor/codex-agent-view/package.json",
+      "size": 1958,
+      "sha256": "41a338e7a9e78320cc0e4e53d68e99fc7239bffa9020d798900dc7fdd709e198"
+    },
+    {
+      "path": "vendor/codex-agent-view/public/app.js",
+      "size": 92133,
+      "sha256": "fe86ecc3157b4f8bfe88aab44064f7db3951e385ae2440dbf71acaf620d2aed6"
+    },
+    {
+      "path": "vendor/codex-agent-view/public/index.html",
+      "size": 6937,
+      "sha256": "084d3a941af9015216c810dfcfa2b9a4818e91f958a6c5ee093f8089b3c55a99"
+    },
+    {
+      "path": "vendor/codex-agent-view/public/styles.css",
+      "size": 22058,
+      "sha256": "35abbe2691c2523e3a6e1d5b39d946b227b06aa32f363f7efd10d4684e88dc22"
+    },
+    {
+      "path": "vendor/codex-agent-view/scripts/auto-start-monitor.mjs",
+      "size": 2323,
+      "sha256": "bdb3074aad765850bcce2f9f99f67277b9b91449d96819b30843cab4eca505cd"
+    },
+    {
+      "path": "vendor/codex-agent-view/scripts/capture-hook.mjs",
+      "size": 3371,
+      "sha256": "f2d4def258d64e142848953c7a42f7a577fa09a60791a71e00b4a0e8be6c7aba"
+    },
+    {
+      "path": "vendor/codex-agent-view/scripts/send-hook.mjs",
+      "size": 4574,
+      "sha256": "190aac744238631443985b93a03c0536dee9102d5a93a26060711b7210b662cf"
+    },
+    {
+      "path": "vendor/codex-agent-view/skills/codex-agent-view/SKILL.md",
+      "size": 1725,
+      "sha256": "f2ca57eb8816a5aa50c8ffc8b41a46d4a714fc938f615dc2b7b57d071d290452"
+    },
+    {
+      "path": "vendor/codex-agent-view/src/core/index.mjs",
+      "size": 127,
+      "sha256": "399f922b0d09b1a5b6199d795fa89f665555ea721473ab0ef98ab9ac1b3b5e49"
+    },
+    {
+      "path": "vendor/codex-agent-view/src/core/monitor-store.mjs",
+      "size": 27369,
+      "sha256": "38e2d698f47616f353805474d3766aa9db4cb2909e18a7b754461ae23392c73f"
+    },
+    {
+      "path": "vendor/codex-agent-view/src/core/normalize-hook-payload.mjs",
+      "size": 11743,
+      "sha256": "8b44143024bc06c3d54edbf554a6d9f68c74ab175d5aa4fbd860a1900b2e236b"
+    },
+    {
+      "path": "vendor/codex-agent-view/src/runtime/config.mjs",
+      "size": 6727,
+      "sha256": "bbfee19a57e6df68c1006ab11a8c19b5d30ac9370493c4c8b0043b9ae2d111a4"
+    },
+    {
+      "path": "vendor/codex-agent-view/src/runtime/server.mjs",
+      "size": 18541,
+      "sha256": "5e467f71d58f63ef10b5f86b5d61662db11ed2bcae9f055c2a70eb17f81ced58"
+    },
+    {
+      "path": "web/app.js",
+      "size": 16080,
+      "sha256": "e84bfeeadf0929a8c35e918569c5f091e10ffc1f1450841bb0c362162843dc58"
+    },
+    {
+      "path": "web/index.html",
+      "size": 4453,
+      "sha256": "22085fbd4b142d0e6bf7244597e3c1acf475e2f4c37874f00d0ff0e068238f67"
+    },
+    {
+      "path": "web/styles.css",
+      "size": 11899,
+      "sha256": "88eb96d55fe7da258524d31918f936bffb97b656cfd208590bf211f7a85c861d"
+    },
+    {
+      "path": "\u4f7f\u7528\u8aaa\u660e.txt",
+      "size": 1231,
+      "sha256": "8772fa4141a96a25973ab8bee7d3cb1e3bd9116a566c8dc37b9f23adef4479fc"
+    }
+  ],
+  "open_executed": false,
+  "global_guidance_applied_by_this_copy": false,
+  "primary_service_started": true,
+  "browser_opened_by_deployer": false
+}

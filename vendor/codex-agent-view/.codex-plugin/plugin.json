@@ -1,0 +1,30 @@
+{
+  "name": "codex-agent-view",
+  "version": "0.5.6",
+  "description": "A read-only Codex plugin for monitoring live tasks and subagents in your browser. Open each view with one lightweight @codex-agent-view invocation. Once open, live monitoring runs locally with no additional model calls.",
+  "author": {
+    "name": "Junho Yoon",
+    "url": "https://github.com/JunhoYoon95"
+  },
+  "homepage": "https://github.com/JunhoYoon95/codex-agent-view#readme",
+  "repository": "https://github.com/JunhoYoon95/codex-agent-view",
+  "license": "Apache-2.0",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Agent View",
+    "shortDescription": "Live Codex agent dashboard.",
+    "longDescription": "Open a lightweight, read-only dashboard of active Codex work, privacy-minimized request summaries, participating agents, and progress locally in your default browser. Invoke @codex-agent-view directly; no separate skill picker or $ command is required, and no starter text is inserted. Open each view with one lightweight @codex-agent-view invocation. Once open, live monitoring runs locally with no additional model calls. A new invocation may be needed after the browser tab is closed or its credential expires. Each invocation is a normal Codex turn, and monitored tasks and subagents continue to use their normal tokens. The live monitoring path does not resend observed task data to a model.",
+    "developerName": "Junho Yoon",
+    "category": "Productivity",
+    "brandColor": "#123F35",
+    "composerIcon": "./assets/logo.svg",
+    "logo": "./assets/logo.svg",
+    "logoDark": "./assets/logo-dark.svg",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://github.com/JunhoYoon95/codex-agent-view",
+    "privacyPolicyURL": "https://github.com/JunhoYoon95/codex-agent-view/blob/main/docs/privacy.md",
+    "termsOfServiceURL": "https://github.com/JunhoYoon95/codex-agent-view/blob/main/docs/terms.md"
+  }
+}

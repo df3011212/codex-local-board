@@ -1,0 +1,264 @@
+# Codex Local Board｜繁體中文本機進度看板
+
+以繁體中文整理每個工作聊天室的**目標、正在做什麼、下一步、已完成成果、可驗證關卡與分工**。主要入口是 Node.js 標準函式庫的唯讀本機看板；模型依聊天室已知內容鏡像短報告，無須另呼模型分析日誌。本專案不含遊戲檔案、帳號、私人對話或特定使用者路徑。
+
+| 介面 | 資料從哪裡來 | 能看見什麼 |
+|---|---|---|
+| 本專案主要語意看板 | 當前 Codex 模型依指導執行 `agent_report.mjs` 鏡像事實 | 每聊天室的清楚目標／目前／下一步／成果、明確關卡進度與實際分工 |
+| Python v1 相容檢查點 | 你或代理明確執行 `update_state.py` 登記 | 原有多專案檢查點；Node 看板可合併唯讀呈現 |
+| 外部 Agent View（進階備選） | 經 Codex 原生載入、授權後收到的全域 hooks | 新工作與子代理的事件、工具活動及許可狀態 |
+
+**Agent View 的事件不會自動轉成這裡的完成百分比。** 工具被呼叫、代理停止或程式碼準備好，都不等於驗收通過。兩者均不提供模型的內部思考，也不重建安裝前未觀測到的歷史。
+
+## 快速啟動：主要語意看板
+
+核心報告需要 **Node.js 18 以上**；自動讀取既有對話使用 Node 內建 `node:sqlite`，建議 **24.22.2**，可攜版本已附。無 npm 套件、Python或前端建置依賴，也不需自建資料庫；觀察來源唯讀讀取現有 Codex SQLite 索引。較舊 Node 可顯示語意報告，但該觀察來源會標示不可用。從本來源產生 Windows x64 可攜版本使用下方 `make_portable.py`（僅產生器需要 Python 3.10 以上）。
+
+1. 下載並解壓縮本專案，或使用產生的完整可攜資料夾。
+2. 雙擊 `Open-Board.cmd`。使用相對路徑的 `runtime/node.exe`，來源版才會尋找已安裝的 Node。
+3. 預設開啟 `http://127.0.0.1:8787`。自動列出可確認的既有普通對話，以本機索引及限額公開訊息整理；模型結構化報告優先。缺關卡就顯示待建立，範例永遠標示為範例。
+4. 重複開啟會沿用本資料夾的看板；使用 `Close-Board.cmd` 關閉它，狀態保留。
+
+可在終端機以前景方式執行（`Ctrl+C` 結束）：
+
+```powershell
+node board-node.mjs serve --root . --state ./state-v2.json --legacy-state ./state.json --config ./config.json --port 8787 --open
+```
+
+新語意資料存放 `state-v2.json`，與 Python v1 的 `state.json` 分開；不把 v2 欄位塞入舊嚴格結構。頁面每五秒重讀，HTTP 只有固定唯讀路由，沒有網路寫入 API。
+
+對話名稱沿用 Codex 原始字樣，從本機 `CODEX_HOME/session_index.jsonl` 的最新 `thread_name` 唯讀取得；在 Codex 重新命名後，看板後續刷新會跟著更新，不自行改寫儲存中的語意報告。關閉觀察來源時也不讀這份名稱索引。
+
+### 讓新工作自動鏡像報告
+
+Codex 在新工作開始時載入 `CODEX_HOME`（預設家目錄 `.codex`）的全域指導（[官方提示指南](https://developers.openai.com/cookbook/examples/gpt-5/codex_prompting_guide)）。本節的語意鏡像由**當前模型已理解工作後，依短指導使用 reporter 登記摘要**，不另呼 LLM，也不解析內部思考或用工具日誌推測進度。下節的只讀觀察來源則自動列出既有普通對話。既有 canonical `claude-mem work_state_write` 保持主要來源；有該工具時先更新它，再鏡像看板。
+
+先檢查／預覽，確認後安裝（可攜版本將下列 `node` 改成 `.\runtime\node.exe`）：
+
+```powershell
+node install-agent-guidance.mjs audit
+node install-agent-guidance.mjs install --render
+node install-agent-guidance.mjs install --apply
+```
+
+安裝器只加入自己的 managed block，保留所有既有文字與章節；每次實際變更前將原始 bytes 備份到 `CODEX_HOME/.codex-local-board-guidance-backups`，支援 UTF-8 BOM／CRLF。存在 `AGENTS.override.md` 時處理優先生效的該檔，不會把指導加到被遮蔽的 `AGENTS.md`。未知／重複標記、連結檔、同時編輯或鎖衝突會拒絕，不自動覆寫使用者內容。請勿在安裝時同時手動編輯全域檔案；備份可能含私人指導，不要上傳。
+
+只移除本專案指導，保留其他文字及狀態：
+
+```powershell
+node install-agent-guidance.mjs uninstall
+node install-agent-guidance.mjs uninstall --apply
+```
+
+`install`／`uninstall` 未加 `--apply` 只預覽。可用 `--codex-home` 指定測試用 Codex 目錄、`--board-root` 指定長期保留的本專案資料夾、`--node` 指定固定 Node 路徑；報告命令會固定共享狀態的絕對位置，避免每個工作目錄各存一份。移動看板資料夾後請重新預覽／安裝，更新指導中的位置。
+
+生效範圍是**之後載入這份全域指導的新工作**。安裝器不強制重啟、不更改 hooks／信任；已執行中的舊對話不保證熱載入。舊對話可首次明確載入指導後報告自己的已知狀態，沒有安裝前對話全量回放，也不能宣稱所有聊天室已同步。
+
+根工作使用真實 `CODEX_THREAD_ID` UUID；缺少就等待明確 ID，不隨機冒充聊天室。spawn 子代理時要在任務訊息帶父工作 UUID、穩定分工 ID 與角色；子代理只更新該分工，不覆寫父目標或關卡。工具停止不等於交付完成，沒有已定義關卡不顯示假百分比；費用／Token／工時未知就不填。開始多步工作、有意義的里程碑和最終交付各更新一次即可，不用每次工具呼叫都製造事件。
+
+### 已存在對話的唯讀來源
+
+主要 Node 看板預設還會嘗試從本機 Codex 索引列出可確認的使用者根對話，只讀取公開使用者訊息與明確公開的助理訊息作為簡短來源。這是沒有額外 LLM 的有限資料整理，**不是把工具日誌猜成完成進度，也不是理解全部歷史**。子代理與未知來源不冒充另一個使用者聊天室；推理／analysis、系統指導、工具輸入輸出不會進入這條來源。
+
+此類列會標示「已讀取公開對話・待關卡同步」。只有公開文字時，關卡顯示待建立、百分比保持空值，不從結束事件推測完成；相同真 UUID 的模型結構化報告優先，才能提供更清楚的目標、下一步與已驗證成果。
+
+讀取 SQLite 索引需要支援 `node:sqlite` 的 Node；可攜版本的 **24.22.2** 已具備。較舊 Node 仍可使用結構化語意報告；若觀察來源不可用，會顯示診斷，不聲稱已列出所有對話。安裝位置、版本、尚未同步或超出讀取限制都可能使某些對話暫不可用。
+
+可完全關閉此來源，或明確指定本機 Codex 目錄：
+
+```powershell
+.\Open-Board.cmd --no-observe
+.\Open-Board.cmd --codex-home "你的 Codex 目錄"
+```
+
+觀測模式或目錄與已執行服務不同時，先用 `Close-Board.cmd` 正常關閉，再重新開啟；不會偷偷沿用不同設定。這個只讀來源和全域語意指導分開，後者的載入仍遵守上面的新工作／舊對話限制。不要將執行中的私人狀態檔放進公開 GitHub。
+
+## Python v1 檢查點相容方式
+
+本機看板需要 Python **3.10 以上**；不用 pip、Node.js、資料庫或前端建置工具。Windows 腳本支援 Windows PowerShell 5.1，腳本使用 ASCII，避免系統編碼差異。
+
+1. 下載並解壓縮本專案到你自己的資料夾。
+2. Windows 雙擊 `Start-Board.cmd`。
+3. 預設瀏覽器開啟 `http://127.0.0.1:8787`。初次啟動只建立缺少的 `state.json`、`config.json`；不覆寫既有內容。
+4. 使用 `Stop-Board.cmd` 關閉本資料夾啟動的看板。狀態檔保留。
+
+指定其他連接埠或不開瀏覽器：
+
+```powershell
+.\Start-Board.ps1 -Port 8788 -NoBrowser
+.\Stop-Board.ps1
+```
+
+macOS、Linux 或偏好手動執行時：
+
+```sh
+python update_state.py init
+python server.py --port 8787
+```
+
+部分系統使用 `python3`。前景執行以 `Ctrl+C` 結束。`python server.py --check` 只驗證檔案、不開服務。
+
+Start／Stop 只管理本資料夾的程序，核對 PID、啟動時間、Python 執行檔和完整命令列參數。重複啟動會沿用同一程序；遇到其他服務占用連接埠會失敗，不會關掉別人的程序。Windows 使用排他 socket，避免不同程序共用相同連接埠。
+
+## 登記真實檢查點
+
+範例一開始全部為待完成，會顯示「範例資料」。真正更新後移除此標記。以下範例需由你核對事實後執行；指令本身不會替你做驗收。
+
+```sh
+python update_state.py set-task --project website-demo --id requirements --status done --detail "需求與驗收條件已核對"
+python update_state.py set-task --project website-demo --id implementation --status source_ready --detail "實作已備妥，測試尚未完成"
+python update_state.py event --project website-demo --text "開始驗證輸入與輸出"
+python update_state.py set-agent --project website-demo --id reviewer --role "驗證協作者" --status in_progress --detail "正在執行已列明的檢查"
+```
+
+新增專案、關卡：
+
+```sh
+python update_state.py add-project --id my-project --title "我的專案" --summary "由明確驗收關卡追蹤"
+python update_state.py add-task --project my-project --id verify --group delivery --title "輸入與輸出驗收"
+python update_state.py set-project --id my-project --phase "驗收中" --summary "依實際結果更新"
+```
+
+`--state`、`--config` 放在子命令之前，可使用其他本機檔案：
+
+```sh
+python update_state.py --state other-state.json --config other-config.json init
+python server.py --state other-state.json --config other-config.json --port 8788
+```
+
+同一檔案的 CLI 寫入以作業系統鎖序列化，再原子替換 JSON，減少多個協作者互相覆蓋。未知 ID、非法狀態或超過限制的更新會拒絕。若手動編輯 JSON，請自行協調；編輯器不會自動遵守 CLI 的鎖。
+
+## 進度與介面設定
+
+`config.json` 可調標題、副標、輪詢秒數、完成狀態，以及分工／事件區是否顯示；預設每 **5 秒**重讀資料，範圍為 1–60 秒。各專案的 `groups` 決定交付、介面或其他群組，可直接在 `state.json` 調整後使用 `server.py --check` 驗證。
+
+預設只有 `done`、`passed`、`frozen` 計入完成。`source_ready`、`in_progress`、`blocked` 不計入。若你的關卡本來就是「完成源碼準備」，可明確把 `source_ready` 加入 `complete_statuses`；頁面會展示目前採用的規則。
+
+比例為 **完成關卡數 ÷ 全部關卡數**，各關等重，向下取整；199／200 仍是 99%，全部完成才顯示 100%。無關卡時顯示「尚無關卡」。這不是工時估算、工作量加權或交付時間預測。
+
+資料暫時無法讀取時保留上一次畫面，並清楚顯示讀取失敗，避免把舊資料當作最新進度。所有文字透過文字節點呈現，不把狀態欄位當成 HTML。
+
+## 選配：全域代理事件監看
+
+上游 [Codex Agent View](https://github.com/JunhoYoon95/codex-agent-view) 是獨立的 Apache-2.0 專案。本專案只提供安裝與開啟包裝腳本、繁中 UI 補丁；**沒有捆綁或重新授權它的完整原始碼**。
+
+需求為 Node.js **18 以上**、npm，以及支援 plugins／hooks 且可在終端機呼叫的 Codex CLI。只有使用本機檢查點看板時，不需要這些額外工具。
+
+```powershell
+.\Install-AgentView.ps1
+```
+
+腳本固定使用官方公開版本 `0.5.6`：
+
+```sh
+npm install --global --ignore-scripts codex-agent-view@0.5.6
+codex-agent-view install
+codex-agent-view doctor --json
+```
+
+安裝前將既有 Codex `config.toml` 備份到使用者私人 `%LOCALAPPDATA%\CodexLocalBoard\private-config-backups`，不放進本專案。備份可能含私人設定，請勿公開。腳本保留既有設定與其他外掛，使用 npm 現有的全域 prefix；不要求系統管理員權限、不默默改 prefix，不安裝或升級 Codex，也不強制重開。
+
+若缺 Node／npm／Codex，腳本會指出缺少的項目後停止。若 npm 的現有 prefix 需要你沒有的權限，請先安排自己的 Node／npm 使用者安裝。CLI 不在 PATH 時，會另查 `npm prefix --global` 的官方 shim。
+
+### 原生 hooks 檢閱與自動登記
+
+依 Codex 原生 **Plugins／Hooks Review／Trust** 提示檢閱。安裝腳本不寫入信任資料，也不自動點選授權；`doctor` 若回報 trust 為 `unknown`，不能解讀為已完成原生信任。
+
+完成原生載入與授權後，全域外掛接收這九類事件：
+
+`SessionStart`、`SessionEnd`、`UserPromptSubmit`、`Stop`、`SubagentStart`、`SubagentStop`、`PreToolUse`、`PostToolUse`、`PermissionRequest`。
+
+此設定適用於同一使用者 Codex 環境載入外掛後的新工作，不限安裝時的那一個對話。收到新工作事件會自動登記到共用監視器；服務未啟動時，上游 hook 會啟動／沿用同一個本機監視器，**不必每個對話另開一台服務**。外掛的原生載入時機仍以你的 Codex 提示為準；必要時由你選擇適當時機重開 Codex、開新任務。
+
+這不是掃描側欄所有舊聊天，沒有安裝前歷史回放，也不猜測模糊的工作指派。上游事件保存在記憶體，有容量限制，不應當作永久稽核紀錄。安裝成功或九個 hook 已登記，也不代表已驗證每一類事件都在你的環境實際觸發。
+
+### 開啟共用代理看板
+
+雙擊 `Open-All-Agents.cmd`，或在一個獨立的 Codex 查看任務使用 `@codex-agent-view`。包裝腳本只在子程序暫時清空 `CODEX_THREAD_ID`，呼叫無參數的官方 `codex-agent-view open`，讓共用頁面包含所有已觀測工作；不偽造工作 ID、不修改全域環境。
+
+官方命令會把短效私人查看授權直接交給系統預設瀏覽器。不要複製或公開帶授權的 URL。授權不是永久有效；超時時重新執行開啟命令。不要把進階 `start` 命令印出的私人目標當成永久捷徑。
+
+### 產生主要看板的可攜資料夾（Windows x64）
+
+若一般桌面啟動程式找不到 Codex 內工具看得見的 AppData 檔案，先在**一般 Windows 終端機**檢查安裝位置。不同執行環境的檔案可視性可能不同；僅有這個症狀不能確定是 MSIX 虛擬化。
+
+另提供不依賴 npm shim、PATH 或 AppData 啟動腳本的入口產生器：
+
+```powershell
+python make_portable.py --output "$HOME\Desktop\Codex-Local-Board-Launcher"
+```
+
+需要 Python 3.10 以上及網路，產生器本身不需要已安裝 Node。預設只下載官方 Node.js **24.22.2 Windows x64 ZIP**，核對固定 SHA-256，搭配本專案的語意看板、reporter、指導安裝器與繁中網頁，建立全新資料夾；既有資料夾會拒絕覆寫。
+
+新資料夾包含 `runtime/node.exe`、Node 完整 `LICENSE`、本專案 MIT 來源、範例與逐檔雜湊。**GitHub 來源不包含下載的執行檔或上游完整原始碼**。
+
+雙擊新資料夾內 `Open-Board.cmd`，直接使用相對路徑的 Node 開啟主要語意看板；`Close-Board.cmd` 只關閉已核對健康身分、PID、根目錄指紋與執行個體 ID 的本資料夾服務，不會根據任意 PID 檔關閉其他服務。請保留整個資料夾；產生器不自動改動桌面其他捷徑。
+
+主要看板**不需要 Agent View 外掛**。在長期保留的新資料夾，依上方步驟預覽並安裝全域語意指導，讓之後載入指導的 Codex 工作鏡像報告。產生器本身不安裝指導、不註冊外掛、不改信任、不開服務／瀏覽器，也不複製私人設定、token 或事件。
+
+若另外需要進階工具活動介面，可加選外部 Agent View：
+
+```powershell
+python make_portable.py --output "$HOME\Desktop\Codex-Local-Board-With-Events" --with-agent-view
+```
+
+這才額外下載 npm **Agent View 0.5.6 TGZ**、核對固定 SHA-512 及完整 23 個檔名，保留 Apache `LICENSE`／`NOTICE`。預設只翻譯兩個公開 UI 檔，`--english` 保留該進階介面的原始語言。產生的 `Open-All-Agents.cmd` 使用相對 Node／官方 CLI 開進階介面，暫時清空子程序 `CODEX_THREAD_ID`，不列印私人授權網址；它仍須事先安裝官方外掛並完成原生 hooks 檢閱，仍沿用家目錄 `.codex-agent-view` 或既有 `CODEX_AGENT_VIEW_RUNTIME_DIR`，不因可攜入口繞過安裝或信任。
+
+主要入口回報失敗時先看 `.runtime/node-server-error.log`；鎖檔衝突時先確認沒有另一個啟停操作，不要刪除仍在使用的鎖。只有加選 Agent View 時，其唯讀診斷命令是（輸出可能含本機路徑，請自行檢查再分享）：
+
+```powershell
+.\runtime\node.exe .\vendor\codex-agent-view\bin\codex-agent-view.mjs doctor --json
+```
+
+下載來源及版本依據：[Node.js 官方雜湊清單](https://nodejs.org/dist/v24.22.2/SHASUMS256.txt)、[npm 官方套件資訊](https://registry.npmjs.org/codex-agent-view/0.5.6)。雜湊不符或上游版本不同時會拒絕，請勿關閉驗證繼續安裝。
+
+### Agent View 繁體中文介面
+
+另附 `agentview_zh_tw.py` 與 `agentview.zh-TW.json`。安裝腳本在 Python 3.10 以上可用時，最後嘗試套用繁中補丁；缺 Python 不影響 Agent View 原本的安裝，可稍後手動執行：
+
+```sh
+python agentview_zh_tw.py
+python agentview_zh_tw.py --apply
+```
+
+第一行只檢查，第二行才寫入。非預設安裝位置可用 `--root` 指定已安裝的 Agent View 套件根目錄，可重複指定。
+
+補丁只接受 **0.5.6 的精確原始公開資源雜湊**，只改 `public/app.js`、`public/index.html`，完整核對 160 個翻譯鍵與插值欄位，將繁中設為新語言預設；使用獨立的語言設定鍵，避免舊英文偏好蓋過新預設。原始 UI 備份留在私人 LocalAppData，重複套用可安全辨識。
+
+不相符的版本、未知修改或錯誤備份會拒絕；升級上游後不保證補丁仍適用。此補丁不修改 hooks、授權、事件發送或狀態輪詢，不需為修改公開 UI 強制重啟監視器。補丁只翻譯介面，工作名稱／工具輸出等原始內容仍依來源顯示。上游 Apache-2.0 授權不因本補丁而改變。
+
+## 本機範圍與資料限制
+
+伺服器只綁定 `127.0.0.1`，僅接受符合實際連接埠的 localhost／127.0.0.1 Host；只開放固定 GET 路由。沒有網路寫入 API、目錄瀏覽或任意檔案下載，其他方法拒絕。這不是公開網站伺服器；同一台電腦上的其他程序仍可能讀取本機資料，所以請勿在檢查點放密碼或機密。
+
+Node v2 語意狀態最多 8 MiB、500 個聊天室；單次報告最多 64 KiB，每聊天室最多 200 個關卡／32 個分工／30 筆事件／12 個群組，證據及文字另有限長。Python v1 相容狀態最多 256 KiB、20 個專案，每專案 200 個關卡／32 個分工／30 筆事件。過大、非法 JSON 或結構不符時拒絕，不偷偷截斷關卡；各聊天室事件只保留最近三十筆。
+
+`.gitignore` 排除執行中的 `state-v2.json`、`state.json`、`config.json`、`.runtime`、鎖檔及測試暫存。公開範例不含任何實際工作資料；請自行檢查要提交的其他檔案。
+
+## 驗證
+
+```sh
+python -m unittest discover -s tests -v
+node --check web/app.js
+node tests/test_dom.js
+node tests/test_guidance.mjs
+node tests/test_launcher.mjs
+node --test tests/board-node.test.mjs
+node tests/test_observer.mjs
+```
+
+Windows PowerShell 5.1 的解析及真實程序啟停測試：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\Test-Scripts.ps1 -SmokeLifecycle
+```
+
+測試涵蓋固定 HTTP 路徑、Host、HTTP 方法、大小與結構限制、失敗不覆寫、並行更新不遺失、事件上限、初始化保留、百分比、雙專案 DOM、安全文字與響應式版面結構，以及含空格路徑、重複啟動、假 PID／其他服務拒絕及正確關閉。繁中補丁以自製合成介面結構測試版本拒絕、插值鍵、預覽及重複套用，不攜帶上游完整 JS。
+
+可攜入口測試使用自製 archive，核對雜湊失敗、下載跳轉拒絕、tar 路徑穿越／連結拒絕、精確檔名、相對入口、授權檔保留與既有輸出不覆寫；不會替測試安裝外掛或打開瀏覽器。
+
+DOM 測試不是瀏覽器像素驗收；安裝腳本的靜態檢查也不等於所有機器上的 hooks 已實際運作。
+
+## 授權
+
+本專案原創看板、腳本與翻譯補丁採 [MIT](LICENSE)。獨立依賴 Codex Agent View 由其作者提供，採 [Apache-2.0](https://github.com/JunhoYoon95/codex-agent-view/blob/main/LICENSE)。本專案不是 OpenAI 或 Agent View 上游官方發行版本。
