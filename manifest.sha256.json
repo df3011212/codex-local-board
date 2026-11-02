@@ -28,6 +28,7 @@
     "agentview_zh_tw.py",
     "board-node.mjs",
     "board.py",
+    "codex-execution.mjs",
     "codex-observer.mjs",
     "codex-titles.mjs",
     "config.example.json",
@@ -40,7 +41,9 @@
     "sync-all.mjs",
     "tests/Test-Scripts.ps1",
     "tests/board-node.test.mjs",
+    "tests/codex-execution.test.mjs",
     "tests/codex-titles.test.mjs",
+    "tests/execution-merge.test.mjs",
     "tests/fixtures/board-v2-demo.json",
     "tests/summary-merge.test.mjs",
     "tests/sync-all.test.mjs",
@@ -105,8 +108,8 @@
     },
     {
       "path": "README.md",
-      "size": 26974,
-      "sha256": "b8c39b6ca4160f3b4dc3518139abba0065bfcffcdcc500942981458625425115"
+      "size": 29227,
+      "sha256": "f9e9d902b853af8ca8606ca6614bc2d85beaf71c90cb170336d47f2b8561f8b4"
     },
     {
       "path": "Start-Board.cmd",
@@ -130,8 +133,8 @@
     },
     {
       "path": "Sync-All-Chats.cmd",
-      "size": 514,
-      "sha256": "f8c51bfc9fa2c57e0aafe45c433f6733a2b8cb2e389c296ac5e6aa82faedc62d"
+      "size": 1227,
+      "sha256": "a7d742982fd99dca5a96ef468873cfcab00b87807d2cb41ed8eb3c5698671148"
     },
     {
       "path": "agent_report.mjs",
@@ -150,13 +153,18 @@
     },
     {
       "path": "board-node.mjs",
-      "size": 25557,
-      "sha256": "e5410d204ab7d1cb053ff987ff0ebc6f92538266cb0d20fa4b6bb42f12a86430"
+      "size": 26766,
+      "sha256": "87c02f29e87bd30903c280f01740711da68d47e09b8c6b6c601d92476c0d8680"
     },
     {
       "path": "board.py",
       "size": 7503,
       "sha256": "96af2eb7ef5658f3d45ee8afce66f43f2eec7b61d510bc653b75e0d41727940f"
+    },
+    {
+      "path": "codex-execution.mjs",
+      "size": 8115,
+      "sha256": "0b981c1415e4631961ec6c28cf9c568a9fd28ac4f620fb23766f72299b262502"
     },
     {
       "path": "codex-observer.mjs",
@@ -185,8 +193,8 @@
     },
     {
       "path": "make_portable.py",
-      "size": 10383,
-      "sha256": "b4ee8166dba2f1e0a5fa085af96ede7376ea27f633cf66da595ec5b7a4260a7b"
+      "size": 10406,
+      "sha256": "d749c3c57e1757dfdd7449b2667c3e1701a1eae6fbebad0193136ee5a037b4a1"
     },
     {
       "path": "open-board.mjs",
@@ -215,8 +223,8 @@
     },
     {
       "path": "sync-all.mjs",
-      "size": 23298,
-      "sha256": "69d289860cede075d891b2c522dfa73eec76126063616cab78fb8b15bf284191"
+      "size": 26212,
+      "sha256": "7b5bd92dee31a68a41f2c2f7585673dec338dc17877a78ae59c6629ff57cb46f"
     },
     {
       "path": "tests/Test-Scripts.ps1",
@@ -229,9 +237,19 @@
       "sha256": "b1bf76073fa911252dbe2044fa6a4daec570aecf5973f88a52f6b2f47eb481ef"
     },
     {
+      "path": "tests/codex-execution.test.mjs",
+      "size": 9299,
+      "sha256": "114a8b7dda132b219ae5bdfbf1b6fd3552de8e63415e25af277d2007a8f53009"
+    },
+    {
       "path": "tests/codex-titles.test.mjs",
       "size": 7896,
       "sha256": "b54e8f822056771982f1a399c835dc876810908645a92b0f300229f161f6f3ae"
+    },
+    {
+      "path": "tests/execution-merge.test.mjs",
+      "size": 6028,
+      "sha256": "ef9b013e73dd4a13d63bdf55fba5dc44ec177f3c1053efd26e2c5dedfa8af8bc"
     },
     {
       "path": "tests/fixtures/board-v2-demo.json",
@@ -245,8 +263,8 @@
     },
     {
       "path": "tests/sync-all.test.mjs",
-      "size": 18205,
-      "sha256": "b3a653ebbd2297873ba66579d99dff130535decebccb5d17c34dc269a4875d57"
+      "size": 21272,
+      "sha256": "442b87507b15b746e342a84b037b8c7eedcfaffde9c8eab869db6b5c66132c99"
     },
     {
       "path": "tests/test_addon.py",
@@ -260,8 +278,8 @@
     },
     {
       "path": "tests/test_dom.js",
-      "size": 12243,
-      "sha256": "f373b3163ef8e4c9d858b2791cc81e5c88210c066d6e573c93db51c3366dc04d"
+      "size": 17032,
+      "sha256": "80db643d0b6c0ecc446988b034774dc47886419c6ab97b33b27c97b44c23a66d"
     },
     {
       "path": "tests/test_guidance.mjs",
@@ -405,23 +423,23 @@
     },
     {
       "path": "web/app.js",
-      "size": 17424,
-      "sha256": "846fcf02bfab444613f76c65ff709b81fff4546bbf4e73ee3a5118e728b74d0e"
+      "size": 20908,
+      "sha256": "3276abd9790cf04592e2a5f226b304f616e2dbee74e48bf14b3d0d18f01f77dd"
     },
     {
       "path": "web/index.html",
-      "size": 4919,
-      "sha256": "89d8d7b306962737a455631541929564548012ac9e50289bff5edcb5979851e8"
+      "size": 5325,
+      "sha256": "4937a9cbde863859b2d9954cb902b503a33d0330a755f02bafa56ecf2ebd0f16"
     },
     {
       "path": "web/styles.css",
-      "size": 12444,
-      "sha256": "1e03a215a62d1c913ead3412f4e59199be7372e10fad74c8f978fe111057962f"
+      "size": 14900,
+      "sha256": "39ce45ab62a41fd222f7c680d4ab2156d5ba2ae278b1b26fd359421ce1cecd63"
     },
     {
       "path": "使用說明.txt",
-      "size": 3862,
-      "sha256": "166a7d3d50a6930d774196c432b321afa3143abf2adab8051e900ec1bee10466"
+      "size": 4647,
+      "sha256": "efe999fb14e5ad69a9fdd90215e03df13d7b0d9ebe025b8855c84a1d3dbd96a9"
     }
   ]
 }

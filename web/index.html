@@ -19,19 +19,19 @@
     <details id="other-tasks" class="other-tasks" hidden><summary>其他同步任務 <span id="other-task-count" class="count">0</span></summary><p class="other-task-note">尚未取得 Codex 原始標題的任務，另外收在這裡。</p><div id="other-conversations" class="conversation-list"></div></details>
   </aside>
   <main id="workspace" aria-label="對話工作進度">
-    <div class="sync-bar"><span id="sync-state" class="sync-status" role="status">等待工作摘要</span><span id="updated">尚未同步</span></div>
+    <div class="sync-bar"><span id="sync-state" class="sync-status" role="status">等待工作摘要</span><div class="sync-times"><span id="updated">尚未同步</span><span id="read-at">頁面尚未成功讀取</span></div></div>
     <p id="observation-notice" class="observation-notice" role="status" hidden></p>
     <p id="selection-kind" class="selection-kind" hidden>目前選擇的是其他同步任務，尚未取得 Codex 原始對話標題。</p>
-    <section class="banner" aria-labelledby="project-title"><p class="phase" id="phase">等待對話同步</p><h2 id="project-title">尚未選擇對話</h2><p class="section-kicker">這個對話要完成什麼</p><p id="goal" class="goal">尚未同步需求目標。</p><p id="summary" class="legacy-summary" hidden></p></section>
+    <section class="banner" aria-labelledby="project-title"><p class="phase" id="phase">等待對話同步</p><div class="banner-title"><h2 id="project-title">尚未選擇對話</h2><span id="project-execution" class="execution-badge unknown" role="status" aria-live="polite" aria-atomic="true">未取得執行狀態</span></div><p class="section-kicker">這個對話要完成什麼</p><p id="goal" class="goal">尚未同步需求目標。</p><p id="summary" class="legacy-summary" hidden></p></section>
     <div class="focus-grid">
-      <section class="focus-card current-card"><p class="section-kicker"><span class="focus-dot" aria-hidden="true"></span>目前正在做</p><h2 id="current">等待代理回報目前工作。</h2><p id="current-note"></p></section>
+      <section class="focus-card current-card"><div class="focus-label-row"><p class="section-kicker"><span class="focus-dot" aria-hidden="true"></span>目前正在做</p><span id="current-execution" class="execution-badge unknown">未取得執行狀態</span></div><h2 id="current">等待代理回報目前工作。</h2><p id="current-note"></p></section>
       <section class="focus-card"><p class="section-kicker">接下來的一步</p><h2 id="next">尚未同步下一步。</h2><p>顯示代理明確回報的安排，不從工具紀錄推測。</p></section>
     </div>
     <section class="outcomes-panel panel" id="outcomes-panel" aria-labelledby="outcomes-heading"><div class="panel-head"><div><p class="section-kicker">已經交付的內容</p><h2 id="outcomes-heading">已完成成果</h2></div><span id="outcome-count" class="count">0</span></div><div id="outcomes" class="outcomes"></div></section>
-    <div class="section-heading"><div><p class="section-kicker">以明確關卡計算</p><h2>任務進度</h2></div><p id="completion-policy"></p></div>
+    <div class="section-heading"><div><p class="section-kicker">以明確關卡計算</p><h2>關卡完成比例</h2></div><p id="completion-policy"></p></div>
     <section class="progress-grid" id="progress" aria-label="任務與群組關卡進度"></section><section class="metrics" id="metrics" aria-label="回報的資料指標" hidden></section>
     <div class="project-grid" id="layout">
-      <section class="panel" aria-labelledby="tasks-heading"><div class="panel-head"><div><h2 id="tasks-heading">任務關卡</h2><p>每一項都有明確狀態，完成與驗證分開呈現。</p></div></div><div id="tasks"></div></section>
+      <section class="panel" aria-labelledby="tasks-heading"><div class="panel-head"><div><h2 id="tasks-heading">任務關卡</h2><p id="task-runtime-note">每一項都有明確狀態，完成與驗證分開呈現。</p></div></div><div id="tasks"></div></section>
       <aside id="sidebar" class="detail-sidebar">
         <section class="panel" id="agents-panel"><div class="panel-head"><div><h2>工作分工</h2><p>主代理、實際子代理的角色與目前工作。</p></div></div><div id="agents"></div></section>
         <section class="panel" id="events-panel"><div class="panel-head"><div><h2>重要進展</h2><p>保留有意義的工作更新，不混入逐筆工具活動。</p></div></div><div id="events"></div></section>

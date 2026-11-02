@@ -34,7 +34,7 @@
 .\runtime\node.exe .\sync-all.mjs sync --dry-run
 ```
 
-同步器先使用 `--codex-bin` 指定的 CLI，再查看 `CODEX_LOCAL_BOARD_CODEX_BIN` 或 PATH 上的 `codex`。找不到時會停止，不自動安裝或改動設定；可先在一般終端機確認 `codex --version`。它沿用已登入的 CLI 與既有模型設定，不跳過原生信任要求。單次執行預設最多等待 180 秒，可用 `--timeout-seconds` 指定 1–600 秒；所有目標通過格式檢查後才合併整理結果，失敗或逾時會保留原檔。
+同步器先使用 `--codex-bin` 指定的 CLI，再查看 `CODEX_LOCAL_BOARD_CODEX_BIN` 或 PATH 上的 `codex`。找不到時會停止，不自動安裝或改動設定；可先在一般終端機確認 `codex --version`。它沿用已登入的 CLI 與既有模型設定，不跳過原生信任要求。單次執行預設最多等待 **600 秒（10 分鐘）**，可用 `--timeout-seconds` 指定 1–600 秒；所有目標通過格式檢查後才合併整理結果，失敗或逾時會保留原檔。視窗會顯示目前階段及已等待時間，不從模型內部事件推測百分比。逾時的那次執行可能已使用額度；程式不會自動重試，請勿反覆開啟同步視窗。
 
 一次最多整理 50 個尚未有完整直接回報的原生對話，模型輸入總量最多 512 KiB，每個對話最多 24 KiB。`--dry-run` 與完成結果會列出數量及 `omitted_capacity`；超出容量的對話仍未同步，不能因這批完成就宣稱全部聊天室已同步。
 
@@ -61,6 +61,16 @@ node board-node.mjs serve --root . --state ./state-v2.json --summary-state ./con
 對話名稱沿用 Codex 原始字樣，從本機 `CODEX_HOME/session_index.jsonl` 的最新 `thread_name` 唯讀取得；在 Codex 重新命名後，看板後續刷新會跟著更新，不自行改寫儲存中的語意報告。關閉觀察來源時也不讀這份名稱索引。
 
 左側每個對話只顯示一行原名，過長時用省略號呈現，完整名稱保留在提示文字與搜尋內容。當原生名稱索引可用、且至少有一個可對應名稱時，主清單只列出可對應 Codex 名稱的對話；尚無原生名稱的報告與測試任務收在預設折疊的「其他同步任務」，不混入主清單，也不刪除資料。沒有可用原生名稱時，仍可選擇已同步的工作報告。重新讀取資料會保留目前選擇、搜尋、焦點及折疊狀態。
+
+### 如何分辨仍在執行與等待下一步
+
+對話列表、目前選取的工作與「目前正在做」會顯示獨立的執行狀態。收到明確的執行中訊號時出現轉圈；收到停止訊號時顯示「目前未執行」；來源不可用、尚未觀測到、等待使用者或訊號過期時顯示「未取得執行狀態」。取得狀態暫時失敗時會停止顯示舊的轉圈，保留最後工作摘要並等待重試。
+
+執行訊號來自**已經運行的 Codex Agent View** 的唯讀狀態 API，只取目前回合的明確狀態與時間；不解析原始工具日誌、不讀取內部思考，也不使用「關卡進行中」或回報時間推測 Codex 正在跑。需要既有 Agent View 外掛的 hooks 已依 Codex 原生流程載入並收到事件；本看板不會為了轉圈自動安裝外掛、啟動 Codex 或更改信任設定。沒有這個選配來源時，其他工作進度仍正常顯示，執行狀態保持未知。此來源不另呼模型，不使用 Codex 額度；頁面仍依設定的輪詢週期更新，與 Codex 視窗可能有短暫延遲。
+
+「進行中」關卡沒有細部百分比時，使用不定量進度條，**不隨時間自動增加百分比**；來源確認該對話執行中時才播放動畫。上方數字仍是已驗收關卡的完成比例，例如四個關卡尚未完成時為 0 / 4，並不表示程式卡住。偏好減少動態的使用者會看到靜態狀態與文字。
+
+「最後摘要較早」表示工作摘要已超過 10 分鐘，並非模型排隊倒數。頁面每次成功讀取的時間另列於「頁面讀取」，摘要則等待原對話的 Codex 在有意義的里程碑回報。此時不必執行 `Sync-All-Chats.cmd` 去更新仍在工作的聊天室：完整直接回報會優先保留，不由舊對話整理覆寫。
 
 ### 查看回報格式
 
@@ -115,6 +125,8 @@ node install-agent-guidance.mjs uninstall --apply
 .\Open-Board.cmd --no-observe
 .\Open-Board.cmd --codex-home "你的 Codex 目錄"
 ```
+
+`--no-observe` 同時關閉原生名稱、公開對話與執行狀態的觀察；已登記的工作報告仍可讀取。
 
 觀測模式或目錄與已執行服務不同時，先用 `Close-Board.cmd` 正常關閉，再重新開啟；不會偷偷沿用不同設定。這個只讀來源和全域語意指導分開，後者的載入仍遵守上面的新工作／舊對話限制。不要將執行中的私人狀態檔放進公開 GitHub。
 
@@ -292,6 +304,8 @@ node tests/test_guidance.mjs
 node tests/test_launcher.mjs
 node --test tests/board-node.test.mjs
 node --test tests/codex-titles.test.mjs
+node --test tests/codex-execution.test.mjs
+node --test tests/execution-merge.test.mjs
 node --test tests/test_observer.mjs
 node --test tests/summary-merge.test.mjs
 node --test tests/sync-all.test.mjs

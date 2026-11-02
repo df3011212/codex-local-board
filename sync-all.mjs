@@ -9,13 +9,14 @@ import {fileURLToPath} from 'node:url';
 import {ROOT,FINISHED,readSemantic,validateSemanticState,lockedUpdate,redact,argumentsFor} from './board-node.mjs';
 import {readCodexTitles} from './codex-titles.mjs';
 
-export const SYNC_LIMITS=Object.freeze({native:50,headBytes:256*1024,tailBytes:2*1024*1024,chatBytes:24*1024,payloadBytes:512*1024,messageBytes:8192,timeoutSeconds:180,maxTimeoutSeconds:600});
+export const SYNC_LIMITS=Object.freeze({native:50,headBytes:256*1024,tailBytes:2*1024*1024,chatBytes:24*1024,payloadBytes:512*1024,messageBytes:8192,timeoutSeconds:600,maxTimeoutSeconds:600,progressMs:15000});
 export const SOURCE_EVIDENCE='原對話公開回報，本輪未重測';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PHASES=new Set(['commentary','final','final_answer']);
 const SENSITIVE=/(?:password|passwd|api[_ -]?key|authorization|access[_ -]?token|refresh[_ -]?token|secret|cookie|\btoken\b|密碼|密码|暗碼|暗码|帳密|账密|帳號|账号|金鑰|密钥|令牌|私鑰|私钥)/i;
 const PUBLIC_ERRORS={SYNC_BUSY:'已有同步工作正在執行，未另開模型。',NO_CODEX:'找不到已安裝的 Codex CLI；請設定 CODEX_LOCAL_BOARD_CODEX_BIN。',NO_TITLES:'無法讀取 Codex 原始對話標題索引。',NO_DATABASE:'無法唯讀開啟 Codex 對話資料庫。',UNTRUSTED_PATH:'路徑超出允許範圍或不是一般檔案。',PAYLOAD_LIMIT:'公開摘要輸入超過容量限制，未啟動模型。',SYNC_TIMEOUT:'同步逾時，原有摘要保持不變。',CODEX_FAILED:'Codex 未成功完成；請在私人同步目錄檢查執行紀錄。',INVALID_RESULT:'整理結果不完整或不符合結構，原有摘要保持不變。',INVALID_OPTIONS:'同步指令參數不正確。'};
-function fail(code){const e=new Error(PUBLIC_ERRORS[code]||'同步失敗，原有摘要保持不變。');e.publicCode=code;throw e;}
+function fail(code,timeoutSeconds){const e=new Error(PUBLIC_ERRORS[code]||'同步失敗，原有摘要保持不變。');e.publicCode=code;if(code==='SYNC_TIMEOUT'&&Number.isInteger(timeoutSeconds))e.timeoutSeconds=timeoutSeconds;throw e;}
+function progress(dependencies,phase,message,details={}){try{dependencies.onProgress?.({phase,message,...details});}catch{/* Display failures never change synchronization or trigger another model. */}}
 function ordinary(value){return process.platform==='win32'?value.replace(/^\\\\\?\\([A-Za-z]:\\)/,'$1'):value;}
 function pathKey(value){const resolved=path.resolve(ordinary(value));return process.platform==='win32'?resolved.toLowerCase():resolved;}
 function samePath(a,b){return pathKey(a)===pathKey(b);}
@@ -119,15 +120,18 @@ export function syncPrompt({input,stage,reporter,node,targets}){
 }
 export async function invokeCodex({root,run,input,stage,targets,codexBin,timeoutSeconds=SYNC_LIMITS.timeoutSeconds},dependencies={}){
  const command=await resolveCodex(codexBin),reporter=path.join(root,'agent_report.mjs');await fs.access(reporter);
+ const interval=dependencies.progressIntervalMs??SYNC_LIMITS.progressMs;if(!Number.isInteger(interval)||interval<1||interval>SYNC_LIMITS.progressMs)fail('INVALID_OPTIONS');
  const stdout=await fs.open(path.join(run,'codex-events.private.jsonl'),'wx',0o600),stderr=await fs.open(path.join(run,'codex-stderr.private.log'),'wx',0o600);
  const env={...process.env};for(const key of ['CODEX_THREAD_ID','CODEX_LOCAL_BOARD_PARENT_ID','CODEX_LOCAL_BOARD_AGENT_ID'])delete env[key];
- const args=[...command.prefix,'exec','--skip-git-repo-check','--sandbox','workspace-write','--add-dir',root,'-C',run,'--json','-'];let child,timedOut=false,launchFailed=false;
+ const args=[...command.prefix,'exec','--skip-git-repo-check','--sandbox','workspace-write','--add-dir',root,'-C',run,'--json','-'];let child,timedOut=false,launchFailed=false,timer,waiting;
  try{
+  const started=performance.now();
   child=(dependencies.spawn||spawn)(command.file,args,{cwd:run,env,shell:false,windowsHide:true,stdio:['pipe',stdout.fd,stderr.fd]});
-  const timer=setTimeout(()=>{timedOut=true;if(child.exitCode===null){if(process.platform==='win32'&&child.pid)spawn(path.join(process.env.SystemRoot||'C:\\Windows','System32','taskkill.exe'),['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'}).on('error',()=>child.kill());else child.kill('SIGTERM');}},timeoutSeconds*1000);
-  const exit=await new Promise(resolve=>{child.once('error',()=>{launchFailed=true;resolve(null);});child.once('close',resolve);child.stdin.on('error',()=>{});child.stdin.end(syncPrompt({input,stage,reporter,node:process.execPath,targets}));});clearTimeout(timer);
-  if(timedOut)fail('SYNC_TIMEOUT');if(launchFailed||exit!==0)fail('CODEX_FAILED');
- }finally{await stdout.close();await stderr.close();}
+  waiting=setInterval(()=>{if(child.exitCode!==null||timedOut)return;const seconds=Math.floor((performance.now()-started)/1000);progress(dependencies,'model_wait',`Codex 仍在整理，已等待 ${seconds} 秒（上限 ${timeoutSeconds} 秒）；這是實際等待時間，不是完成百分比。`,{elapsed_seconds:seconds,timeout_seconds:timeoutSeconds});},interval);
+  timer=setTimeout(()=>{timedOut=true;clearInterval(waiting);progress(dependencies,'model_timeout',`已達 ${timeoutSeconds} 秒上限，正在停止本次整理；不會自動重試。`,{timeout_seconds:timeoutSeconds});if(child.exitCode===null){if(process.platform==='win32'&&child.pid)spawn(path.join(process.env.SystemRoot||'C:\\Windows','System32','taskkill.exe'),['/PID',String(child.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'}).on('error',()=>child.kill());else child.kill('SIGTERM');}},timeoutSeconds*1000);
+  const exit=await new Promise(resolve=>{child.once('error',()=>{launchFailed=true;resolve(null);});child.once('close',resolve);child.stdin.on('error',()=>{});child.stdin.end(syncPrompt({input,stage,reporter,node:process.execPath,targets}));});clearTimeout(timer);clearInterval(waiting);
+  if(timedOut)fail('SYNC_TIMEOUT',timeoutSeconds);if(launchFailed||exit!==0)fail('CODEX_FAILED');
+ }finally{clearTimeout(timer);clearInterval(waiting);await stdout.close();await stderr.close();}
 }
 export function validateResults(state,targets){
  let normalized;try{normalized=validateSemanticState(state);}catch{fail('INVALID_RESULT');}const expected=new Set(targets);
@@ -145,22 +149,25 @@ export async function runSync(options={},dependencies={}){
  // Windows resolves case variants to the same file even before it exists.
  // Reject aliases before outputPath, locks, staging files or any model call.
  if(samePath(state,summaries)||!within(root,summaries)||path.extname(summaries).toLowerCase()!=='.json')fail('INVALID_OPTIONS');const timeoutSeconds=options.timeoutSeconds??SYNC_LIMITS.timeoutSeconds;if(!Number.isInteger(timeoutSeconds)||timeoutSeconds<1||timeoutSeconds>SYNC_LIMITS.maxTimeoutSeconds)fail('INVALID_OPTIONS');
- if(options.dryRun){const data=await exportConversations({...options,root,state});return{status:'preview',...data.diagnostics,bytes:Buffer.byteLength(JSON.stringify(data)),model_started:false};}
+ if(options.dryRun){progress(dependencies,'preview','正在預覽可同步的公開對話；這個步驟不會啟動模型。');const data=await exportConversations({...options,root,state});return{status:'preview',...data.diagnostics,bytes:Buffer.byteLength(JSON.stringify(data)),model_started:false};}
  await outputPath(root,summaries);await readSemantic(summaries);
  const runId=randomUUID(),release=await lockSync(root,runId);let run;
  try{
-  const data=await exportConversations({...options,root,state}),targets=data.conversations.map(c=>c.id);if(!targets.length)return{status:'up_to_date',...data.diagnostics,model_started:false};
+  progress(dependencies,'reading','正在唯讀檢查原始對話、直接回報與可整理的公開內容。');
+  const data=await exportConversations({...options,root,state}),targets=data.conversations.map(c=>c.id);if(!targets.length){progress(dependencies,'up_to_date','目前沒有需要整理的對話；本次未啟動模型，也未使用整理額度。');return{status:'up_to_date',...data.diagnostics,model_started:false};}
   run=path.join(root,'.runtime','sync-runs',runId);await outputPath(root,path.join(run,'staged-summaries.json'));if(await fs.realpath(run)!==run)fail('UNTRUSTED_PATH');
   const input=path.join(run,'public-context.private.json'),stage=path.join(run,'staged-summaries.json');await jsonFile(input,data,true);
+  progress(dependencies,'model_start',`即將用目前已登入的 Codex 整理 ${targets.length} 個對話；這一次可能使用 Codex 額度，上限 ${timeoutSeconds} 秒，逾時不會自動重試。`,{targets:targets.length,timeout_seconds:timeoutSeconds});
   await(dependencies.invoke||invokeCodex)({root,run,input,stage,targets,codexBin:options.codexBin,timeoutSeconds},dependencies);
-  let staged;try{await plainFile(root,stage);staged=await readSemantic(stage);}catch{fail('INVALID_RESULT');}await outputPath(root,summaries);const merged=await mergeSummaries(summaries,staged,targets);
-  const result={status:'synced',targets:targets.length,total_summaries:merged.projects.length,model_started:true,run_id:runId,...data.diagnostics};await jsonFile(path.join(run,'result.json'),result);return result;
- }finally{await release();}
+  progress(dependencies,'validating','Codex 已結束，正在驗證目標、資料結構與成果證據。');
+  let staged;try{await plainFile(root,stage);staged=validateResults(await readSemantic(stage),targets);}catch{fail('INVALID_RESULT');}await outputPath(root,summaries);progress(dependencies,'merging','全部目標通過驗證，正在合併摘要；直接工作回報保持優先。');const merged=await mergeSummaries(summaries,staged,targets);
+  const result={status:'synced',targets:targets.length,total_summaries:merged.projects.length,model_started:true,run_id:runId,...data.diagnostics};await jsonFile(path.join(run,'result.json'),result);progress(dependencies,'complete',`已完成 ${targets.length} 個對話摘要的驗證與合併。`,{targets:targets.length});return result;
+ }catch(e){progress(dependencies,'failed',e.publicCode==='SYNC_TIMEOUT'?`本次整理已達 ${e.timeoutSeconds??timeoutSeconds} 秒上限；原有摘要保持不變。此次可能已使用額度，不會自動重試；請先檢查執行狀態與私人同步目錄，再決定是否重新啟動。`:'本次同步未完成；原有摘要保持不變，不會自動重試。若 Codex 已啟動，此次可能已使用額度。');throw e;}finally{await release();}
 }
 export async function main(argv=process.argv.slice(2)){
  const action=argv[0];if(!['sync','export'].includes(action))fail('INVALID_OPTIONS');let a;try{a=argumentsFor(argv.slice(1),['--root','--codex-home','--state','--summaries','--output','--codex-bin','--timeout-seconds','--dry-run'],['--dry-run']);}catch{fail('INVALID_OPTIONS');}
  const root=await safeRoot(a['--root']||ROOT),options={root,codexHome:a['--codex-home'],state:a['--state'],summaries:a['--summaries'],codexBin:a['--codex-bin'],timeoutSeconds:a['--timeout-seconds']?Number(a['--timeout-seconds']):undefined,dryRun:Boolean(a['--dry-run'])};
  if(action==='export'){if(!a['--output']||a['--dry-run']||a['--codex-bin']||a['--timeout-seconds'])fail('INVALID_OPTIONS');const target=path.resolve(ordinary(a['--output'])),home=path.resolve(ordinary(options.codexHome||process.env.CODEX_HOME||path.join(os.homedir(),'.codex')));if(within(home,target)||samePath(target,home))fail('UNTRUSTED_PATH');if(samePath(target,options.state||path.join(root,'state-v2.json'))||samePath(target,options.summaries||path.join(root,'conversation-summaries.json')))fail('INVALID_OPTIONS');const filename=await outputPath(root,target),data=await exportConversations(options);await jsonFile(filename,data,true);console.log(JSON.stringify({status:'exported',...data.diagnostics,bytes:Buffer.byteLength(JSON.stringify(data)),model_started:false}));}
- else{if(a['--output'])fail('INVALID_OPTIONS');if(!options.dryRun)console.error('明確同步將使用目前已登入 Codex 的一次整理額度；服務輪詢不會另呼模型。');console.log(JSON.stringify(await runSync(options)));}
+ else{if(a['--output'])fail('INVALID_OPTIONS');console.log(JSON.stringify(await runSync(options,{onProgress:event=>console.error(event.message)})));}
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(e=>{console.error(JSON.stringify({status:'failed',code:e.publicCode||'SYNC_FAILED',message:PUBLIC_ERRORS[e.publicCode]||'同步失敗，原有摘要保持不變；請檢查私人同步紀錄。'}));process.exitCode=1;});
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(e=>{const message=e.publicCode==='SYNC_TIMEOUT'?`同步達到 ${e.timeoutSeconds??SYNC_LIMITS.timeoutSeconds} 秒上限；原有摘要保持不變，此次可能已使用額度，不會自動重試。請先檢查私人同步目錄與執行狀態，再決定是否重新啟動。`:PUBLIC_ERRORS[e.publicCode]||'同步失敗，原有摘要保持不變；請檢查私人同步紀錄。';console.error(JSON.stringify({status:'failed',code:e.publicCode||'SYNC_FAILED',message,...(e.publicCode==='SYNC_TIMEOUT'?{timeout_seconds:e.timeoutSeconds??SYNC_LIMITS.timeoutSeconds,automatic_retry:false}:{} )}));process.exitCode=1;});

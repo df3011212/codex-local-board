@@ -120,15 +120,25 @@ export async function mergedState(statePath,legacyPath,observations={projects:[]
 }
 const defaultConfig={schema_version:1,title:'每個聊天室的工作看板',subtitle:'每個對話的需求、目前工作、下一步與成果。',poll_seconds:5,complete_statuses:['done','passed','frozen'],show_agents:true,show_events:true};
 export function validateConfig(v){keys(v,Object.keys(defaultConfig),Object.keys(defaultConfig));if(v.schema_version!==1||!Number.isInteger(v.poll_seconds)||v.poll_seconds<1||v.poll_seconds>60||typeof v.show_agents!=='boolean'||typeof v.show_events!=='boolean')throw Error('Invalid board display configuration');list(v.complete_statuses,8);if(v.complete_statuses.some(s=>!['done','passed','frozen'].includes(s)))throw Error('Source readiness is not completion');return {...v,title:text(v.title,120),subtitle:text(v.subtitle,300)};}
-export async function createBoardServer({root=ROOT,state=path.join(root,'state-v2.json'),summaryState=path.join(root,'conversation-summaries.json'),legacyState:legacy=path.join(root,'state.json'),config=path.join(root,'config.json'),port=8787,instanceId=randomUUID(),observeCodex=true,codexHome=process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),observationProvider}={}){
+export async function createBoardServer({root=ROOT,state=path.join(root,'state-v2.json'),summaryState=path.join(root,'conversation-summaries.json'),legacyState:legacy=path.join(root,'state.json'),config=path.join(root,'config.json'),port=8787,instanceId=randomUUID(),observeCodex=true,codexHome=process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),observationProvider,executionProvider}={}){
  root=await fs.realpath(root);instanceId=uuid(instanceId);const fingerprint=createHash('sha256').update(root).digest('hex');
- if(typeof observeCodex!=='boolean'||typeof codexHome!=='string'||observationProvider!==undefined&&typeof observationProvider!=='function')throw Error('Invalid read-only observation configuration');
+ if(typeof observeCodex!=='boolean'||typeof codexHome!=='string'||observationProvider!==undefined&&typeof observationProvider!=='function'||executionProvider!==undefined&&typeof executionProvider!=='function')throw Error('Invalid read-only observation configuration');
  let provider=observationProvider;
  async function observations(){if(!observeCodex)return {projects:[],diagnostics:{status:'disabled'}};try{provider??=(await import('./codex-observer.mjs')).observeCodex;const value=await provider({codexHome,maxSessions:LIMITS.sessions,headBytes:131072,tailBytes:131072});return {projects:unique(list(value.projects,LIMITS.sessions).map(observedProject)),diagnostics:value.diagnostics??{}};}catch{return {projects:[],diagnostics:{status:'unavailable'}};}}
  async function presentedState(){
   const value=await mergedState(state,legacy,await observations(),summaryState);let labels={titles:new Map(),diagnostics:{available:false,status:observeCodex?'unavailable':'disabled'}};
   if(observeCodex)try{labels=await(await import('./codex-titles.mjs')).readCodexTitles({codexHome});}catch{}
-  value.projects=value.projects.map(project=>({...project,conversation_title:labels.titles.get(project.session_id??project.id)??null,conversation_title_source:labels.titles.has(project.session_id??project.id)?'codex_session_index':'unavailable'}));
+  let execution={sessions:new Map(),diagnostics:{available:false,status:observeCodex?'unavailable':'disabled',checked_at:now()}};
+  if(observeCodex)try{executionProvider??=(await import('./codex-execution.mjs')).readCodexExecution;const sessionIds=value.projects.map(project=>{try{return uuid(project.session_id??project.id);}catch{return null;}}).filter(Boolean);execution=await executionProvider({codexHome,sessionIds});}catch{}
+  const checked=now(),available=execution?.diagnostics?.available===true&&execution?.sessions instanceof Map;
+  value.execution={available,status:available?'ok':observeCodex?'unavailable':'disabled',checked_at:checked};
+  value.projects=value.projects.map(project=>{
+   const id=project.session_id??project.id,live=execution?.sessions instanceof Map?execution.sessions.get(id):null;
+   let status=available&&['running','idle'].includes(live?.status)&&live.source==='codex_agent_view'?live.status:'unknown',updated=null;
+   if(status!=='unknown')try{updated=stamp(live.updated_at??null);}catch{}
+   if(!updated)status='unknown';
+   return {...project,conversation_title:labels.titles.get(id)??null,conversation_title_source:labels.titles.has(id)?'codex_session_index':'unavailable',execution:{status,source:status==='unknown'?'unavailable':'codex_agent_view',updated_at:status==='unknown'?null:updated,checked_at:checked}};
+  });
   value.conversation_titles=labels.diagnostics;return value;
  }
  const server=http.createServer(async(req,res)=>{

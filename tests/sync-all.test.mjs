@@ -133,3 +133,21 @@ test('export refuses direct and summary store targets including Windows case ali
  for(const output of targets){const result=await cli(['export','--root',f.root,'--codex-home',f.home,'--output',output]);assert.notEqual(result.code,0);assert.equal(JSON.parse(result.err).code,'INVALID_OPTIONS');}
  assert.deepEqual(await fs.readFile(f.state),before);assert.equal((await fs.stat(f.state)).mtimeMs,stat.mtimeMs);await assert.rejects(()=>fs.stat(f.summaries),{code:'ENOENT'});
 });
+
+test('default limit is 600 seconds and phase reporting contains measured facts rather than percentages',async t=>{
+ assert.equal(SYNC_LIMITS.timeoutSeconds,600);assert.equal(SYNC_LIMITS.maxTimeoutSeconds,600);assert.equal(SYNC_LIMITS.progressMs,15000);
+ const f=await fixture(t);await f.add(A,'階段合成',[user('請整理公開進度')]);const executable=await mock(f),events=[];
+ const result=await runSync({...f,codexBin:executable},{onProgress:e=>events.push(e)});assert.equal(result.status,'synced');assert.deepEqual(events.map(e=>e.phase),['reading','model_start','validating','merging','complete']);assert.equal(events.find(e=>e.phase==='model_start').timeout_seconds,600);assert.ok(events.every(e=>!('percent'in e)&&!('percentage'in e)&&!/\d+%/.test(e.message)));
+});
+
+test('waiting heartbeat uses elapsed seconds and timeout preserves data, removes lock and never retries',async t=>{
+ const f=await fixture(t);await f.add(A,'可見等待',[user('請整理公開進度')]);await report({statePath:f.summaries,sessionId:D,payload:base()});const before=await fs.readFile(f.summaries),executable=await mock(f,'timeout'),events=[];
+ await assert.rejects(()=>runSync({...f,codexBin:executable,timeoutSeconds:1},{onProgress:e=>events.push(e),progressIntervalMs:50}),e=>e.publicCode==='SYNC_TIMEOUT'&&e.timeoutSeconds===1);
+ const waits=events.filter(e=>e.phase==='model_wait');assert.ok(waits.length>1);assert.ok(waits.every(e=>Number.isInteger(e.elapsed_seconds)&&e.elapsed_seconds>=0&&e.elapsed_seconds<=2&&e.timeout_seconds===1));assert.ok(events.some(e=>e.phase==='failed'&&e.message.includes('1 秒')&&e.message.includes('可能已使用額度')&&e.message.includes('不會自動重試')));assert.equal(events.filter(e=>e.phase==='model_start').length,1);assert.deepEqual(await fs.readFile(f.summaries),before);await assert.rejects(()=>fs.stat(path.join(f.root,'.runtime','sync-all.lock')),{code:'ENOENT'});
+});
+
+test('CLI keeps progress on stderr, one final JSON on stdout, and ASCII wrapper prints Chinese safely',async t=>{
+ const f=await fixture(t);await f.add(A,'終端介面',[user('整理合成公開需求')]);const executable=await mock(f),result=await cli(['sync','--root',f.root,'--codex-home',f.home,'--codex-bin',executable,'--timeout-seconds','10']);
+ assert.equal(result.code,0,result.err);assert.equal(result.out.trim().split('\n').length,1);assert.equal(JSON.parse(result.out).status,'synced');assert.ok(result.err.includes('正在唯讀檢查'));assert.ok(result.err.includes('可能使用 Codex 額度'));assert.ok(result.err.includes('正在驗證'));assert.ok(result.err.includes('全部目標通過驗證'));assert.ok(!result.err.includes('PRIVATE_EVENT_SENTINEL'));assert.ok(!/\d+%/.test(result.err));
+ const wrapper=await fs.readFile(path.join(ROOT,'Sync-All-Chats.cmd'),'utf8');assert.ok([...wrapper].every(c=>c.charCodeAt(0)<128));assert.match(wrapper,/chcp 65001/);assert.ok(wrapper.includes('\\u540c\\u6b65'));assert.ok(!wrapper.includes('Chat synchronization failed'));assert.ok(!wrapper.includes('Node.js was not found'));
+});
