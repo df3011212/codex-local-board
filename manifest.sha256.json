@@ -302,8 +302,8 @@
     },
     {
       "path": "tests/test_dom.js",
-      "size": 24086,
-      "sha256": "583c5c444e62e5c7493d225247c5e33410b3e5c3f01f927b47a98b474d071b62"
+      "size": 24095,
+      "sha256": "f8a44610956675ee11607979b2950e889c8ba9e13ea18c6a2cf8d12059e8dd9b"
     },
     {
       "path": "tests/test_guidance.mjs",
@@ -447,8 +447,8 @@
     },
     {
       "path": "web/app.js",
-      "size": 33595,
-      "sha256": "d6fcc4dc65a3c66062a6977030a6e2c4a17cb5559caccc21f20b386fa8a5f279"
+      "size": 33604,
+      "sha256": "73e9eec17a42cd3520b08335ecefd359497db3124cea2822aeecacf8cb75fe19"
     },
     {
       "path": "web/index.html",

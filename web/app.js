@@ -55,7 +55,7 @@ function progressCard(title,tasks,statuses,requireEvidence=false){
   const bar=element("progress");bar.max=100;bar.value=value.percent??0;bar.hidden=value.percent===null;bar.setAttribute("aria-label",title+"已完成關卡比例");
   card.append(head,bar,element("p",value.percent===null?"尚未建立驗收關卡，暫不顯示完成比例。":`${value.done} / ${value.total} 個關卡完成${requireEvidence?"並附驗證紀錄":"（明確登記）"}。`));return card;
 }
-const PLAN_KIND_LABELS={phase:"階段",module:"模組",task:"驗收項目"},planUI=new Map();
+const PLAN_KIND_LABELS={phase:"階段",module:"模組／分組",task:"驗收項目"},planUI=new Map();
 function planProgress(value){
   if(!value||!Number.isInteger(value.total)||value.total<0||!Number.isInteger(value.completed)||value.completed<0||value.completed>value.total)return{completed:0,total:0,percent:null};
   const percent=value.total>0&&Number.isInteger(value.percent)&&value.percent===Math.floor(value.completed*100/value.total)?value.percent:null;

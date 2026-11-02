@@ -174,7 +174,7 @@ assert.equal(projectPlan(p).full,true);assert.equal(projectPlan(p).nodes.length,
 render(config,planned,p.id);
 assert.equal(nodes.get("plan-title").textContent,"完整已列專案範圍");assert.equal(nodes.get("plan-percent").textContent,"33%");assert.equal(nodes.get("plan-progress").value,33);assert.equal(nodes.get("plan-progress").hidden,false);
 assert.ok(nodes.get("progress").textContent.includes("40%"),"Current checkpoints remain independent from whole-project scope");
-assert.ok(nodes.get("plan-counts").textContent.includes("1 階段1 模組3 驗收項目"));assert.equal(planNode("phase-one").open,true);assert.equal(planNode("module-one").open,false);assert.equal(planNode("accept-one").open,false);
+assert.ok(nodes.get("plan-counts").textContent.includes("1 階段1 模組／分組3 驗收項目"));assert.equal(planNode("phase-one").open,true);assert.equal(planNode("module-one").open,false);assert.equal(planNode("accept-one").open,false);
 assert.ok(planNode("accept-two").textContent.includes("已回報，待驗證"));assert.ok(planNode("accept-two").textContent.includes("前置依賴：已驗收項目"));assert.ok(!planNode("accept-two").textContent.includes("前置依賴：accept-one"));
 const refs=flatten(nodes.get("plan-references"));assert.ok(refs.some(n=>n.tagName==="code"&&n.textContent==="C:\\project\\docs\\plan.md"));assert.equal(refs.filter(n=>n.href).length,1);assert.equal(refs.find(n=>n.href).href,"https://example.test/spec");
 assert.equal(nodes.get("suggestion-count").textContent,"1");assert.ok(nodes.get("suggestions").textContent.includes("<script>不會被當作程式執行</script>"));assert.equal(flatten(nodes.get("suggestions")).filter(n=>n.tagName==="button").length,1);assert.equal(nodes.get("next").textContent,p.next);
