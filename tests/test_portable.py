@@ -80,6 +80,9 @@ class PortableTests(unittest.TestCase):
             self.assertEqual(len(manifest["files"]), 27 + len(portable.BOARD_FILES))
             self.assertTrue((output / "Open-Board.cmd").is_file())
             self.assertTrue((output / "agent_report.mjs").is_file())
+            self.assertIn("web/plan-handoff.js", portable.BOARD_FILES)
+            self.assertEqual((output / "web/plan-handoff.js").read_bytes(),
+                             (portable.HERE / "web/plan-handoff.js").read_bytes())
             before = (output / "manifest.sha256.json").read_bytes()
             with self.assertRaisesRegex(ValueError, "already exists"):
                 portable.assemble(output, b"invalid", b"invalid")
@@ -95,6 +98,7 @@ class PortableTests(unittest.TestCase):
             self.assertIsNone(manifest["agent_view_version"])
             self.assertFalse((output / "vendor").exists())
             self.assertTrue((output / "Open-Board.cmd").is_file())
+            self.assertTrue((output / "web/plan-handoff.js").is_file())
             self.assertFalse((output / "state-v2.json").exists())
 
 

@@ -25,7 +25,7 @@ BOARD_FILES = frozenset({
     ".gitignore", "LICENSE", "README.md", "board-node.mjs", "agent_report.mjs", "open-board.mjs",
     "install-agent-guidance.mjs", "Open-Board.cmd", "Close-Board.cmd",
     "config.example.json", "state.example.json", "web/index.html", "web/app.js",
-    "web/styles.css", "docs/agent-guidance.template.md",
+    "web/styles.css", "web/plan-handoff.js", "docs/agent-guidance.template.md",
     "codex-observer.mjs",
     "codex-titles.mjs", "codex-execution.mjs", "project-plan.mjs", "plan_report.mjs", "使用說明.txt", "sync-all.mjs", "Sync-All-Chats.cmd",
 })

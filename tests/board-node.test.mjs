@@ -141,15 +141,17 @@ test('session capacity and state size never silently drop earlier conversations'
 });
 
 test('fixed GET routes, Host and bounded reads; native health ownership and v1 remain usable',async t=>{
- const f=await fixture(t);await fs.mkdir(path.join(f.dir,'web'));for(const [name,data]of Object.entries({'index.html':'<script nonce="__BOARD_NONCE__" src="/app.js"></script>','app.js':'document.title="看板";','styles.css':'body{color:black}'}))await fs.writeFile(path.join(f.dir,'web',name),data);
+ const f=await fixture(t);await fs.mkdir(path.join(f.dir,'web'));for(const [name,data]of Object.entries({'index.html':'<script nonce="__BOARD_NONCE__" src="/plan-handoff.js"></script><script nonce="__BOARD_NONCE__" src="/app.js"></script>','app.js':'document.title="看板";','plan-handoff.js':'globalThis.BoardPlanHandoff={version:1};','styles.css':'body{color:black}'}))await fs.writeFile(path.join(f.dir,'web',name),data);
  const legacy={schema_version:1,updated_at:null,demo:true,projects:[{id:'manual-demo',title:'舊版明確關卡',groups:[{id:'delivery',title:'交付'}],tasks:[],agents:[],events:[]}]};await fs.writeFile(f.legacy,JSON.stringify(legacy));const original=await fs.readFile(f.legacy,'utf8');
  await report({statePath:f.state,sessionId:A,payload:base('真聊天室')});const instance=randomUUID();const server=await createBoardServer({root:f.dir,state:f.state,legacyState:f.legacy,port:0,instanceId:instance,observeCodex:false});t.after(()=>new Promise(resolve=>server.close(resolve)));const port=server.address().port;
  const health=await wire(port,'/healthz');assert.equal(health.status,200);const h=JSON.parse(health.body);assert.equal(h.service,'codex-local-board');assert.equal(h.version,2);assert.equal(h.pid,process.pid);assert.equal(h.instance_id,instance);assert.match(h.root_fingerprint,/^[a-f0-9]{64}$/);assert.ok(!health.body.includes(f.dir));
  const state=await wire(port,'/state.json');assert.equal(state.status,200);const data=JSON.parse(state.body);assert.equal(data.projects.length,2);assert.equal(data.projects.find(p=>p.id===A).goal,base().goal);assert.equal(await fs.readFile(f.legacy,'utf8'),original);
- const html=await wire(port,'/');assert.equal(html.status,200);assert.ok(!html.body.includes('__BOARD_NONCE__'));assert.match(html.headers['content-security-policy'],/nonce-/);assert.equal(html.headers['x-content-type-options'],'nosniff');
- for(const target of ['/../state.json','/%2e%2e/board.py','/state.json?file=secret','/agent_report.mjs','/config.example.json'])assert.equal((await wire(port,target)).status,404,target);
+ const html=await wire(port,'/');assert.equal(html.status,200);assert.ok(!html.body.includes('__BOARD_NONCE__'));assert.match(html.headers['content-security-policy'],/nonce-/);assert.equal(html.headers['x-content-type-options'],'nosniff');const scriptNonces=[...html.body.matchAll(/nonce="([^"]+)"/g)].map(match=>match[1]);assert.equal(scriptNonces.length,2);assert.equal(new Set(scriptNonces).size,1);
+ const handoff=await wire(port,'/plan-handoff.js');assert.equal(handoff.status,200);assert.equal(handoff.headers['content-type'],'text/javascript; charset=utf-8');assert.equal(handoff.headers['x-content-type-options'],'nosniff');assert.equal(handoff.body,'globalThis.BoardPlanHandoff={version:1};');
+ for(const target of ['/../state.json','/%2e%2e/board.py','/state.json?file=secret','/agent_report.mjs','/config.example.json','/web/plan-handoff.js','/plan-handoff.js?raw=1'])assert.equal((await wire(port,target)).status,404,target);
  assert.equal((await wire(port,'/state.json',{host:`foreign.invalid:${port}`})).status,403);
- for(const method of ['POST','PUT','PATCH','DELETE','OPTIONS','HEAD'])assert.equal((await wire(port,'/state.json',{method})).status,405,method);
+ for(const method of ['POST','PUT','PATCH','DELETE','OPTIONS','HEAD'])for(const target of ['/state.json','/plan-handoff.js'])assert.equal((await wire(port,target,{method})).status,405,method+' '+target);
+ await fs.writeFile(path.join(f.dir,'web','plan-handoff.js'),'x'.repeat(512*1024+1));assert.equal((await wire(port,'/plan-handoff.js')).status,503);
  await fs.writeFile(f.state,JSON.stringify({schema_version:1,source:SOURCE,projects:[],unexpected:true}));assert.equal((await wire(port,'/state.json')).status,503);
 });
 

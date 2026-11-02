@@ -38,6 +38,7 @@
     "docs/demo/app.js",
     "docs/demo/config.json",
     "docs/demo/index.html",
+    "docs/demo/plan-handoff.js",
     "docs/demo/state.json",
     "docs/demo/styles.css",
     "docs/index.html",
@@ -55,6 +56,7 @@
     "tests/codex-titles.test.mjs",
     "tests/execution-merge.test.mjs",
     "tests/fixtures/board-v2-demo.json",
+    "tests/plan-handoff.test.mjs",
     "tests/plan-integration.test.mjs",
     "tests/project-plan.test.mjs",
     "tests/summary-merge.test.mjs",
@@ -69,6 +71,7 @@
     "update_state.py",
     "web/app.js",
     "web/index.html",
+    "web/plan-handoff.js",
     "web/styles.css",
     "使用說明.txt"
   ],
@@ -120,8 +123,8 @@
     },
     {
       "path": "README.md",
-      "size": 33255,
-      "sha256": "3d9ee9df0b54f95cc0bcff1d2d8485dd61f473e6456c82552eb228fac78558e1"
+      "size": 35210,
+      "sha256": "83796cb40e2ef36caae487076990686eed9be262ac5c0e6535c3e3e521892360"
     },
     {
       "path": "Start-Board.cmd",
@@ -165,8 +168,8 @@
     },
     {
       "path": "board-node.mjs",
-      "size": 27983,
-      "sha256": "866496c07c2e2d9e0a9a96087567a7fe8c7b752c11fb2c46f6f4a61398562d08"
+      "size": 28049,
+      "sha256": "ba506845a5047be378a8be0b06dcd2e2026902f0d9fc612bacf176fcd5e15045"
     },
     {
       "path": "board.py",
@@ -210,8 +213,8 @@
     },
     {
       "path": "docs/demo/app.js",
-      "size": 33556,
-      "sha256": "d483b25f60ad3052cc9307e1635fca8410ef7c4299049700af08928490f65723"
+      "size": 38498,
+      "sha256": "b83f54b098ddf7e7800df4a6ae52c3964d63bab54554dc2e577ac61b2b87aa2f"
     },
     {
       "path": "docs/demo/config.json",
@@ -220,8 +223,13 @@
     },
     {
       "path": "docs/demo/index.html",
-      "size": 8605,
-      "sha256": "3a0ca7f22cad9b9b01f480cd2f58ce4a8d52455af7e18c7ad7cce12ef4f44360"
+      "size": 8886,
+      "sha256": "786967adeac0a0b7210ecb7149ff7e47097bebe943276ecdcb64d7ebf0c012cb"
+    },
+    {
+      "path": "docs/demo/plan-handoff.js",
+      "size": 8287,
+      "sha256": "d20a18e21d822110d7b0dfca8e8187a9308102fcd04404cfa923435ba2edc9e5"
     },
     {
       "path": "docs/demo/state.json",
@@ -230,8 +238,8 @@
     },
     {
       "path": "docs/demo/styles.css",
-      "size": 20837,
-      "sha256": "7a4de1793ecd057c5fe9163b920001e6eb4c3073e5b48ec531de8c25b714e524"
+      "size": 22029,
+      "sha256": "2bb2f686d309e86baed625ecb6c416b2baed7c867347803e89a319a6bb9ea74c"
     },
     {
       "path": "docs/index.html",
@@ -245,8 +253,8 @@
     },
     {
       "path": "make_portable.py",
-      "size": 10445,
-      "sha256": "2f13c8b87869851acaae6b30b8a36d2cfb6a1fd064f471c60283db53d4ae25c1"
+      "size": 10468,
+      "sha256": "8d9a2de69655d3fc7794c3251f2539c07897bec74280ccde3fb5ade4dbf749f8"
     },
     {
       "path": "open-board.mjs",
@@ -295,8 +303,8 @@
     },
     {
       "path": "tests/board-node.test.mjs",
-      "size": 23142,
-      "sha256": "b1bf76073fa911252dbe2044fa6a4daec570aecf5973f88a52f6b2f47eb481ef"
+      "size": 23986,
+      "sha256": "9373e068248122e7ec3599a0564d99c45e715c5399bb2ff714fd8a5676947825"
     },
     {
       "path": "tests/codex-execution.test.mjs",
@@ -317,6 +325,11 @@
       "path": "tests/fixtures/board-v2-demo.json",
       "size": 4927,
       "sha256": "33d74ced1d1dc68c1b9ca2cb268e939fa833f2062ca35b2e8ad7c1915ffb6a59"
+    },
+    {
+      "path": "tests/plan-handoff.test.mjs",
+      "size": 5534,
+      "sha256": "e62a619d084c986a6bd4e17688c43b738778a8840054778a5fefa93e2dec12fa"
     },
     {
       "path": "tests/plan-integration.test.mjs",
@@ -350,8 +363,8 @@
     },
     {
       "path": "tests/test_dom.js",
-      "size": 24095,
-      "sha256": "f8a44610956675ee11607979b2950e889c8ba9e13ea18c6a2cf8d12059e8dd9b"
+      "size": 28947,
+      "sha256": "e0ea1a826ecf3acc22ce4525a7995859b909c7ac5329fcca83ec33860cd433bd"
     },
     {
       "path": "tests/test_guidance.mjs",
@@ -360,8 +373,8 @@
     },
     {
       "path": "tests/test_launcher.mjs",
-      "size": 6213,
-      "sha256": "1f6849808540580caa1ba0cfb28017222934e647f4176ec0f53fe29f636478e7"
+      "size": 6552,
+      "sha256": "c0c62c879e0411ec5650d42ad219f2070fc7791a4d4157da96322de4678fbdaf"
     },
     {
       "path": "tests/test_observer.mjs",
@@ -370,8 +383,8 @@
     },
     {
       "path": "tests/test_portable.py",
-      "size": 5078,
-      "sha256": "8e772a251786181eb965ffdf62145cfac36e314431173ab7c6a5625659aea379"
+      "size": 5380,
+      "sha256": "aac474bc6b782878502970eeca3a756a37a71c3849d5780d5c0702e2f258502a"
     },
     {
       "path": "update_state.py",
@@ -495,18 +508,23 @@
     },
     {
       "path": "web/app.js",
-      "size": 33604,
-      "sha256": "73e9eec17a42cd3520b08335ecefd359497db3124cea2822aeecacf8cb75fe19"
+      "size": 38546,
+      "sha256": "ed6e4bd295a830da877fa0eb26d0d2886420d82ea7657fa544ca4b36c42277b2"
     },
     {
       "path": "web/index.html",
-      "size": 7637,
-      "sha256": "a20593276c45d85e7a460736e4cd36419479a140ea1211839acdb92410c657e3"
+      "size": 7941,
+      "sha256": "5ba592da9e3d78a30f0cf740224d0f36d81f89b39b9b280f279b296d4a3a432b"
+    },
+    {
+      "path": "web/plan-handoff.js",
+      "size": 8287,
+      "sha256": "d20a18e21d822110d7b0dfca8e8187a9308102fcd04404cfa923435ba2edc9e5"
     },
     {
       "path": "web/styles.css",
-      "size": 20216,
-      "sha256": "05cfbea63883074182ea5ec5c50eeb98a47006abc1e057a23a1acf77ea285a52"
+      "size": 21408,
+      "sha256": "3a1c577c3693224ec45ee5b419d97c583f77a9c21a5f66a8881269f6303363c1"
     },
     {
       "path": "使用說明.txt",

@@ -73,7 +73,7 @@ http.createServer((req,res)=>{res.setHeader('Content-Type','application/json');r
   await fs.mkdir(emptyRoot);
   const packageRoot = fileURLToPath(new URL('../', import.meta.url));
   for (const name of ['board-node.mjs','agent_report.mjs','codex-observer.mjs',
-    'config.example.json','state.example.json','web/index.html','web/app.js','web/styles.css']) {
+    'config.example.json','state.example.json','web/index.html','web/app.js','web/styles.css','web/plan-handoff.js']) {
     await fs.mkdir(join(emptyRoot, name, '..'), { recursive: true });
     await fs.copyFile(join(packageRoot, name), join(emptyRoot, name));
   }
@@ -82,6 +82,10 @@ http.createServer((req,res)=>{res.setHeader('Content-Type','application/json');r
     await launch({root:emptyRoot,port:emptyPort,noBrowser:true,noObserve:true});
     const empty = await (await fetch(`http://127.0.0.1:${emptyPort}/state.json`)).json();
     assert.deepEqual(empty.projects, []);
+    const handoff = await fetch(`http://127.0.0.1:${emptyPort}/plan-handoff.js`);
+    assert.equal(handoff.status, 200);
+    assert.equal(handoff.headers.get('content-type'), 'text/javascript; charset=utf-8');
+    assert.equal(await handoff.text(), await fs.readFile(join(emptyRoot, 'web/plan-handoff.js'), 'utf8'));
     await assert.rejects(fs.access(join(emptyRoot, 'state.json')), { code: 'ENOENT' });
     assert.ok((await fs.stat(join(emptyRoot, 'state.example.json'))).isFile());
   } finally { await launch({root:emptyRoot,action:'stop'}); }
