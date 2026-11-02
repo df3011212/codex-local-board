@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "title": "Codex Local Board｜公開互動示範",
+  "subtitle": "實際介面・固定示範資料，不讀取你的本機或私人對話。",
+  "poll_seconds": 5,
+  "complete_statuses": [
+    "done",
+    "passed",
+    "frozen"
+  ],
+  "show_agents": true,
+  "show_events": true
+}

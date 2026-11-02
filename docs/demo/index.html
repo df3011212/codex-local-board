@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="data:,">
+  <meta name="description" content="操作 Codex Local Board 的公開示範：切換對話、搜尋架構與複製建議。所有內容都是固定示範資料，不讀取私人對話。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex Local Board｜公開互動示範</title><link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+<div class="demo-disclosure" role="note"><strong>公開互動示範</strong><span>實際介面・固定示範資料；不連接本機 Codex，不會啟動 AI 或執行建議。</span><nav aria-label="示範網站連結"><a href="../">返回介紹</a><a href="https://github.com/df3011212/codex-local-board/archive/refs/heads/main.zip">下載本機版</a><a href="https://github.com/df3011212/codex-local-board" target="_blank" rel="noopener noreferrer">GitHub 原始碼</a></nav></div>
+<header class="site-header">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">C</span><div><h1 id="title">Codex Local Board｜公開互動示範</h1><p id="subtitle">實際介面・固定示範資料，不讀取你的本機或私人對話。</p></div></div>
+  <div class="header-actions"><span class="chip" id="demo">固定示範資料</span><button id="refresh" type="button">重新讀取示範</button></div>
+</header>
+<div class="board-shell">
+  <aside class="conversation-nav" aria-label="對話選單">
+    <div class="nav-heading"><h2>對話</h2><span id="conversation-count" class="count">0</span></div>
+    <label class="search-label" for="chat-search">搜尋對話</label><input id="chat-search" type="search" placeholder="搜尋對話名稱" autocomplete="off">
+    <label class="select-label" for="project" hidden>選擇對話</label><select id="project" hidden aria-hidden="true" tabindex="-1"><option value="">正在讀取…</option></select>
+    <div id="conversations" class="conversation-list"></div>
+    <details id="other-tasks" class="other-tasks" hidden><summary>其他同步任務 <span id="other-task-count" class="count">0</span></summary><p class="other-task-note">尚未取得 Codex 原始標題的任務，另外收在這裡。</p><div id="other-conversations" class="conversation-list"></div></details>
+  </aside>
+  <main id="workspace" aria-label="對話工作進度">
+    <div class="sync-bar"><span id="sync-state" class="sync-status" role="status">正在載入固定示範</span><div class="sync-times"><span id="updated">固定示範</span><span id="read-at">頁面尚未成功讀取</span></div></div>
+    <p id="observation-notice" class="observation-notice" role="status" hidden></p>
+    <p id="selection-kind" class="selection-kind" hidden>目前選擇的是其他同步任務，尚未取得 Codex 原始對話標題。</p>
+    <section class="banner" aria-labelledby="project-title"><p class="phase" id="phase">等待對話同步</p><div class="banner-title"><h2 id="project-title">尚未選擇對話</h2><span id="project-execution" class="execution-badge unknown" role="status" aria-live="polite" aria-atomic="true">未取得執行狀態</span></div><p class="section-kicker">這個對話要完成什麼</p><p id="goal" class="goal">尚未同步需求目標。</p><p id="summary" class="legacy-summary" hidden></p></section>
+    <div class="focus-grid">
+      <section class="focus-card current-card"><div class="focus-label-row"><p class="section-kicker"><span class="focus-dot" aria-hidden="true"></span>目前工作（示範）</p><span id="current-execution" class="execution-badge unknown">未取得執行狀態</span></div><h2 id="current">等待代理回報目前工作。</h2><p id="current-note"></p></section>
+      <section class="focus-card"><p class="section-kicker">接下來的一步</p><h2 id="next">尚未同步下一步。</h2><p>顯示代理明確回報的安排，不從工具紀錄推測。</p></section>
+    </div>
+    <section class="panel suggestions-panel" aria-labelledby="suggestions-heading"><div class="panel-head"><div><h2 id="suggestions-heading">建議下一步</h2><p>只顯示此對話 Codex 明確回報的建議；建議尚未開始，不會自動執行。</p></div><span id="suggestion-count" class="count">0</span></div><div id="suggestions" class="suggestions"></div><div class="suggestion-copy-area"><p id="suggestion-copy-note" role="status" aria-live="polite"></p><label for="suggestion-copy" id="suggestion-copy-label" hidden>請選取並手動複製建議</label><textarea id="suggestion-copy" readonly hidden></textarea></div></section>
+    <section class="panel plan-panel" aria-labelledby="plan-heading">
+      <div class="panel-head"><div><p class="section-kicker">整個專案的階段、模組與驗收項目</p><h2 id="plan-heading">專案架構總覽</h2></div><span id="plan-source-kind" class="count">範圍待同步</span></div>
+      <div class="plan-overview"><h3 id="plan-title"></h3><p id="plan-goal"></p><p id="plan-summary"></p><p id="plan-scope-note" class="plan-scope-note"></p><div id="plan-counts" class="plan-counts"></div><div class="plan-overall"><div class="progress-head"><h3>全專案已列範圍的驗收比例</h3><strong id="plan-percent" class="percentage">範圍待補齊</strong></div><progress id="plan-progress" max="100" aria-label="全專案已列範圍的驗收項目完成比例" hidden></progress><p id="plan-progress-note"></p></div><details id="plan-source-details" class="plan-source-details"><summary>計畫來源與文件</summary><p id="plan-source-label"></p><p id="plan-updated"></p><div id="plan-references" class="plan-references"></div></details></div>
+      <div class="plan-controls"><div><label for="plan-search">搜尋架構與驗收內容</label><input id="plan-search" type="search" placeholder="搜尋階段、模組或驗收項目" autocomplete="off"></div><label class="plan-filter"><input id="plan-unfinished" type="checkbox">只看未完成驗收項目</label><p id="plan-visible-count" role="status" aria-live="polite"></p></div>
+      <div id="plan-tree" class="plan-tree" role="group" aria-label="可收合的專案組織樹"></div>
+    </section>
+    <section class="outcomes-panel panel" id="outcomes-panel" aria-labelledby="outcomes-heading"><div class="panel-head"><div><p class="section-kicker">已經交付的內容</p><h2 id="outcomes-heading">已完成成果</h2></div><span id="outcome-count" class="count">0</span></div><div id="outcomes" class="outcomes"></div></section>
+    <div class="section-heading"><div><p class="section-kicker">本輪已回報的明確關卡，與全專案範圍分開</p><h2>目前工作關卡完成比例</h2></div><p id="completion-policy"></p></div>
+    <section class="progress-grid" id="progress" aria-label="任務與群組關卡進度"></section><section class="metrics" id="metrics" aria-label="回報的資料指標" hidden></section>
+    <div class="project-grid" id="layout">
+      <section class="panel" aria-labelledby="tasks-heading"><div class="panel-head"><div><h2 id="tasks-heading">任務關卡</h2><p id="task-runtime-note">每一項都有明確狀態，完成與驗證分開呈現。</p></div></div><div id="tasks"></div></section>
+      <aside id="sidebar" class="detail-sidebar">
+        <section class="panel" id="agents-panel"><div class="panel-head"><div><h2>工作分工</h2><p>主代理、實際子代理的角色與目前工作。</p></div></div><div id="agents"></div></section>
+        <section class="panel" id="events-panel"><div class="panel-head"><div><h2>重要進展</h2><p>保留有意義的工作更新，不混入逐筆工具活動。</p></div></div><div id="events"></div></section>
+      </aside>
+    </div>
+    <details id="advanced" class="advanced panel"><summary>進階：同步與技術資料</summary><p>以下是識別碼與原始同步資訊；不代表工作已完成。</p><pre id="technical"></pre></details>
+    <footer><p>全專案計畫與目前工作關卡分開計算；進度條只表示有證據的驗收比例，不是工時、剩餘時間或模型思考。未知比例不填數字，建議不會自動執行。</p><p id="connection" role="status" aria-live="polite">等待示範資料</p></footer>
+    <noscript><p class="empty">請啟用 JavaScript 以操作固定示範資料。</p></noscript>
+  </main>
+</div>
+</body>
+</html>

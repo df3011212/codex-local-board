@@ -32,7 +32,15 @@
     "codex-observer.mjs",
     "codex-titles.mjs",
     "config.example.json",
+    "docs/.nojekyll",
     "docs/agent-guidance.template.md",
+    "docs/assets/social-preview.png",
+    "docs/demo/app.js",
+    "docs/demo/config.json",
+    "docs/demo/index.html",
+    "docs/demo/state.json",
+    "docs/demo/styles.css",
+    "docs/index.html",
     "install-agent-guidance.mjs",
     "make_portable.py",
     "open-board.mjs",
@@ -67,8 +75,8 @@
   "files": [
     {
       "path": ".gitignore",
-      "size": 620,
-      "sha256": "0efc8af57d6a5d72e7eb77f11ed1f67c2aed511d49d65d05654b5e30b591d551"
+      "size": 730,
+      "sha256": "c5cb2ec4643f4e9e047384dfb55e7228440ec4e0cfdb6ca5481993b63bd59495"
     },
     {
       "path": "AgentView.Common.ps1",
@@ -112,8 +120,8 @@
     },
     {
       "path": "README.md",
-      "size": 32884,
-      "sha256": "cf1546e181c35d5255c261ab98bf3e6aa986af8fd16b64fd44d5eedc0288b1c6"
+      "size": 33255,
+      "sha256": "3d9ee9df0b54f95cc0bcff1d2d8485dd61f473e6456c82552eb228fac78558e1"
     },
     {
       "path": "Start-Board.cmd",
@@ -186,9 +194,49 @@
       "sha256": "9b6800bb97aa58b604effa5ee8b76610478139937e66be6135e1f456587c861c"
     },
     {
+      "path": "docs/.nojekyll",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
       "path": "docs/agent-guidance.template.md",
       "size": 5993,
       "sha256": "83081b7f2265659260771945134a6f386cec62e81190b350804f15ea9bb99aa3"
+    },
+    {
+      "path": "docs/assets/social-preview.png",
+      "size": 296624,
+      "sha256": "bfa67ddf4850c014ebf5873904b031bef4925dd2b5926960013c0477bb58de03"
+    },
+    {
+      "path": "docs/demo/app.js",
+      "size": 33556,
+      "sha256": "d483b25f60ad3052cc9307e1635fca8410ef7c4299049700af08928490f65723"
+    },
+    {
+      "path": "docs/demo/config.json",
+      "size": 308,
+      "sha256": "205beb01ab6569e92f457ca58f2101649d179922dfd0908dfb797e0359257fbe"
+    },
+    {
+      "path": "docs/demo/index.html",
+      "size": 8605,
+      "sha256": "3a0ca7f22cad9b9b01f480cd2f58ce4a8d52455af7e18c7ad7cce12ef4f44360"
+    },
+    {
+      "path": "docs/demo/state.json",
+      "size": 20493,
+      "sha256": "bed315ddc63131c0a06de444d65ea622d8ed2863a08f09d26a3de39665fe1e60"
+    },
+    {
+      "path": "docs/demo/styles.css",
+      "size": 20837,
+      "sha256": "7a4de1793ecd057c5fe9163b920001e6eb4c3073e5b48ec531de8c25b714e524"
+    },
+    {
+      "path": "docs/index.html",
+      "size": 2538407,
+      "sha256": "ac04602a164a06d3fe2a11cb244dd8569cb6cfce10da23be676c1fd578a50a19"
     },
     {
       "path": "install-agent-guidance.mjs",

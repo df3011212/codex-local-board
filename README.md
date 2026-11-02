@@ -1,5 +1,9 @@
 # Codex Local Board｜繁體中文本機進度看板
 
+[線上介紹與成果圖](https://df3011212.github.io/codex-local-board/) · [公開互動示範](https://df3011212.github.io/codex-local-board/demo/)
+
+線上示範使用固定公開資料，可以直接試用介面；讀取自己的 Codex 工作仍使用下方本機版。GitHub Pages 不會讀取訪客電腦上的聊天室或檔案，也不會另外呼叫 AI。
+
 以繁體中文整理每個工作聊天室的**目標、目前工作、下一步、已完成成果、可驗證關卡與分工**。主要入口是 Node.js 標準函式庫的唯讀本機看板；由正在工作的 Codex 整理短報告，不必每次刷新另呼模型分析日誌。
 
 本倉庫保留原創來源、測試與 Windows 可攜入口，也保留既有 `runtime/` Node.js 及 `vendor/codex-agent-view/` 套件與完整授權。一般使用者解壓縮後直接開啟看板；不需要先裝 Python 或 npm。本專案的公開範例不含私人對話、帳號或特定使用者路徑。

@@ -1,0 +1,635 @@
+{
+  "schema_version": 2,
+  "source": "public_static_demo",
+  "updated_at": null,
+  "demo": true,
+  "projects": [
+    {
+      "id": "demo-website",
+      "semantic_version": 2,
+      "session_id": "demo-website",
+      "title": "開源網站開發（示範）",
+      "goal": "把一個開源專案的目標、完整計畫與目前工作，整理成一眼看懂的看板。",
+      "current": "正在確認桌面與手機的閱讀流程。",
+      "next": "核對驗收證據，再決定下一階段的範圍。",
+      "summary": "公開功能示範：所有對話、任務、分工與執行狀態均為自創示例，並非私人聊天或實際專案進度。",
+      "phase": "功能示範・非真實專案進度",
+      "groups": [
+        {
+          "id": "design",
+          "title": "需求與介面"
+        },
+        {
+          "id": "delivery",
+          "title": "驗收與交付"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "goal",
+          "title": "把目標與交付範圍說清楚",
+          "group": "design",
+          "status": "passed",
+          "detail": "示範資料：每一步都能對應到明確的驗收項目。",
+          "evidence": [
+            {
+              "label": "示範證據：需求與範圍核對",
+              "url": "https://github.com/df3011212/codex-local-board"
+            }
+          ]
+        },
+        {
+          "id": "layout",
+          "title": "完成首頁與內容布局",
+          "group": "design",
+          "status": "passed",
+          "detail": "示範資料：將需求、目前工作與下一步集中呈現。",
+          "evidence": [
+            {
+              "label": "示範證據：介面檢查紀錄",
+              "url": "https://github.com/df3011212/codex-local-board"
+            }
+          ]
+        },
+        {
+          "id": "navigation",
+          "title": "確認對話切換與搜尋",
+          "group": "design",
+          "status": "passed",
+          "detail": "示範資料：保留選取與搜尋，閱讀更有方向。",
+          "evidence": [
+            {
+              "label": "示範證據：導覽流程檢查",
+              "url": "https://github.com/df3011212/codex-local-board"
+            }
+          ]
+        },
+        {
+          "id": "responsive",
+          "title": "驗收桌面與手機閱讀流程",
+          "group": "delivery",
+          "status": "in_progress",
+          "detail": "示範狀態：目前進行中；尚無細部百分比。",
+          "evidence": []
+        },
+        {
+          "id": "docs",
+          "title": "整理使用說明與上手步驟",
+          "group": "delivery",
+          "status": "source_ready",
+          "detail": "示範狀態：內容已備妥，仍等待驗收。",
+          "evidence": []
+        },
+        {
+          "id": "release",
+          "title": "完成發布前的整體確認",
+          "group": "delivery",
+          "status": "pending",
+          "detail": "示範狀態：尚未開始，不能當成已完成。",
+          "evidence": []
+        }
+      ],
+      "completed": [
+        {
+          "title": "清楚的工作摘要",
+          "detail": "示範成果：目標、目前工作與下一步分開呈現。",
+          "evidence": [
+            {
+              "label": "示範證據：工作摘要範例",
+              "url": "https://github.com/df3011212/codex-local-board"
+            }
+          ]
+        },
+        {
+          "title": "可收合的完整計畫",
+          "detail": "示範成果：整體範圍與本輪關卡分開計算。",
+          "evidence": [
+            {
+              "label": "示範證據：架構組織樹範例",
+              "url": "https://github.com/df3011212/codex-local-board"
+            }
+          ]
+        }
+      ],
+      "suggestions": [
+        {
+          "id": "scope",
+          "title": "先確認下一階段的範圍",
+          "detail": "示範建議：完成目前驗收後，先確認後續需求，再安排下一步。建議不會自動執行。"
+        },
+        {
+          "id": "evidence",
+          "title": "補上每項驗收的證據",
+          "detail": "示範建議：讓「已完成」對應實際檢查結果；資料備妥與驗收通過要分清楚。"
+        }
+      ],
+      "agents": [
+        {
+          "id": "main",
+          "session_id": null,
+          "role": "整合與驗收（示範分工）",
+          "assignment": "整理目標、整合各項成果並核對驗收。",
+          "current": "確認整體閱讀流程與交付範圍。",
+          "next": "彙整可核對的驗收證據。",
+          "status": "in_progress",
+          "detail": "此分工為公開示範資料。",
+          "updated_at": null,
+          "evidence": []
+        },
+        {
+          "id": "ui",
+          "session_id": null,
+          "role": "介面與互動（示範分工）",
+          "assignment": "負責對話導覽、架構樹與不同螢幕的呈現。",
+          "current": "檢查手機閱讀與鍵盤操作。",
+          "next": "提供介面驗收紀錄。",
+          "status": "in_progress",
+          "detail": "此分工為公開示範資料。",
+          "updated_at": null,
+          "evidence": []
+        },
+        {
+          "id": "docs",
+          "session_id": null,
+          "role": "文件與上手（示範分工）",
+          "assignment": "準備安裝說明與操作指南。",
+          "current": "說明內容已備妥，等待驗收。",
+          "next": "對照實際操作方式核對文件。",
+          "status": "source_ready",
+          "detail": "此分工為公開示範資料。",
+          "updated_at": null,
+          "evidence": []
+        }
+      ],
+      "events": [
+        {
+          "at": null,
+          "text": "公開功能示範：所有對話、任務、分工與執行狀態均為自創示例，並非私人聊天或實際專案進度。",
+          "kind": "demo"
+        }
+      ],
+      "metrics": [
+        {
+          "label": "本輪驗收關卡",
+          "value": 6,
+          "unit": "項"
+        },
+        {
+          "label": "全計畫驗收項目",
+          "value": 12,
+          "unit": "項"
+        },
+        {
+          "label": "示範工作分工",
+          "value": 3,
+          "unit": "組"
+        }
+      ],
+      "updated_at": null,
+      "sync": {
+        "status": "demo",
+        "reported_at": null
+      },
+      "history_dropped": 0,
+      "demo": true,
+      "source": "public_static_demo",
+      "execution": {
+        "status": "running",
+        "source": "public_static_demo",
+        "updated_at": null,
+        "reason": "Fixed illustrative state; no runtime observer connected."
+      },
+      "plan": {
+        "session_id": "demo-website",
+        "title": "開源網站的完整計畫（示範）",
+        "goal": "從需求到交付，把完整階段、模組與驗收項目列清楚。",
+        "summary": "公開功能示範：這份計畫包含3個階段、2個模組與12項驗收。所有內容皆為自創示例，並非真實聊天室、工作成果或承諾時程。",
+        "source": {
+          "kind": "generated",
+          "label": "公開功能示範：依自創情境編排；實際使用的是開源專案目前的HTML與JavaScript。",
+          "references": [
+            {
+              "label": "Codex Local Board 開源專案",
+              "url": "https://github.com/df3011212/codex-local-board"
+            },
+            {
+              "label": "公開使用說明",
+              "url": "https://github.com/df3011212/codex-local-board/blob/main/README.md"
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "phase-goal",
+            "parent_id": null,
+            "title": "示範階段一：確認目標與範圍",
+            "kind": "phase",
+            "status": "pending",
+            "detail": "公開功能示範：這是自創的計畫範例，並非實際專案進度。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 3,
+              "total": 3,
+              "percent": 100,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "brief",
+            "parent_id": "phase-goal",
+            "title": "需求摘要",
+            "kind": "task",
+            "status": "passed",
+            "detail": "示範資料：需求、目標與交付邊界。",
+            "evidence": [
+              {
+                "label": "示範證據：此示範驗收項目",
+                "url": "https://github.com/df3011212/codex-local-board"
+              }
+            ],
+            "depends_on": [],
+            "progress": {
+              "completed": 1,
+              "total": 1,
+              "percent": 100,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "scope",
+            "parent_id": "phase-goal",
+            "title": "範圍與優先順序",
+            "kind": "task",
+            "status": "passed",
+            "detail": "示範資料：先列出完整計畫，再安排本輪工作。",
+            "evidence": [
+              {
+                "label": "示範證據：此示範驗收項目",
+                "url": "https://github.com/df3011212/codex-local-board"
+              }
+            ],
+            "depends_on": [],
+            "progress": {
+              "completed": 1,
+              "total": 1,
+              "percent": 100,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "acceptance",
+            "parent_id": "phase-goal",
+            "title": "明確的驗收標準",
+            "kind": "task",
+            "status": "passed",
+            "detail": "示範資料：完成時需要可核對的證據。",
+            "evidence": [
+              {
+                "label": "示範證據：此示範驗收項目",
+                "url": "https://github.com/df3011212/codex-local-board"
+              }
+            ],
+            "depends_on": [],
+            "progress": {
+              "completed": 1,
+              "total": 1,
+              "percent": 100,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "phase-build",
+            "parent_id": null,
+            "title": "示範階段二：功能與介面",
+            "kind": "phase",
+            "status": "pending",
+            "detail": "公開功能示範：這是自創的計畫範例，並非實際專案進度。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 2,
+              "total": 6,
+              "percent": 33,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "nav-module",
+            "parent_id": "phase-build",
+            "title": "對話導覽",
+            "kind": "module",
+            "status": "pending",
+            "detail": "公開功能示範：這是自創的計畫範例，並非實際專案進度。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 2,
+              "total": 3,
+              "percent": 66,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "nav-search",
+            "parent_id": "nav-module",
+            "title": "搜尋與切換對話",
+            "kind": "task",
+            "status": "passed",
+            "detail": "示範資料：每個對話各自保留工作內容。",
+            "evidence": [
+              {
+                "label": "示範證據：此示範驗收項目",
+                "url": "https://github.com/df3011212/codex-local-board"
+              }
+            ],
+            "depends_on": [],
+            "progress": {
+              "completed": 1,
+              "total": 1,
+              "percent": 100,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "nav-titles",
+            "parent_id": "nav-module",
+            "title": "保留原始標題",
+            "kind": "task",
+            "status": "passed",
+            "detail": "示範資料：名稱一致，減少找錯對話。",
+            "evidence": [
+              {
+                "label": "示範證據：此示範驗收項目",
+                "url": "https://github.com/df3011212/codex-local-board"
+              }
+            ],
+            "depends_on": [],
+            "progress": {
+              "completed": 1,
+              "total": 1,
+              "percent": 100,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "nav-mobile",
+            "parent_id": "nav-module",
+            "title": "手機與鍵盤操作",
+            "kind": "task",
+            "status": "in_progress",
+            "detail": "示範資料：跨螢幕的閱讀流程。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 1,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "plan-module",
+            "parent_id": "phase-build",
+            "title": "架構與進度",
+            "kind": "module",
+            "status": "pending",
+            "detail": "公開功能示範：這是自創的計畫範例，並非實際專案進度。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 3,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "tree",
+            "parent_id": "plan-module",
+            "title": "收合與搜尋組織樹",
+            "kind": "task",
+            "status": "in_progress",
+            "detail": "示範資料：把階段、模組與驗收拆開呈現。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 1,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "progress",
+            "parent_id": "plan-module",
+            "title": "完整計畫與本輪關卡分開",
+            "kind": "task",
+            "status": "source_ready",
+            "detail": "示範資料：驗收比例只計算有證據的葉任務。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 1,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "advice",
+            "parent_id": "plan-module",
+            "title": "建議下一步",
+            "kind": "task",
+            "status": "pending",
+            "detail": "示範資料：建議只供確認，不會自動執行。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 1,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "phase-publish",
+            "parent_id": null,
+            "title": "示範階段三：驗收與公開交付",
+            "kind": "phase",
+            "status": "pending",
+            "detail": "公開功能示範：這是自創的計畫範例，並非實際專案進度。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 3,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "guide",
+            "parent_id": "phase-publish",
+            "title": "使用說明與上手指南",
+            "kind": "task",
+            "status": "source_ready",
+            "detail": "示範資料：文件備妥仍需對照實際操作。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 1,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "verification",
+            "parent_id": "phase-publish",
+            "title": "整理驗收與限制",
+            "kind": "task",
+            "status": "pending",
+            "detail": "示範資料：清楚區分已確認、待驗證與未知。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 1,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          },
+          {
+            "id": "publish",
+            "parent_id": "phase-publish",
+            "title": "確認後再公開發布",
+            "kind": "task",
+            "status": "pending",
+            "detail": "示範資料：保留版本與交付紀錄。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": {
+              "completed": 0,
+              "total": 1,
+              "percent": 0,
+              "kind": "evidenced_leaf_tasks"
+            }
+          }
+        ],
+        "updated_at": null,
+        "progress": {
+          "completed": 5,
+          "total": 12,
+          "percent": 41,
+          "kind": "evidenced_leaf_tasks"
+        }
+      },
+      "progress": {
+        "done": 3,
+        "total": 6,
+        "percent": 50
+      }
+    },
+    {
+      "id": "demo-docs",
+      "semantic_version": 2,
+      "session_id": "demo-docs",
+      "title": "使用文件整理（示範）",
+      "goal": "讓第一次使用的人能按說明順利上手。",
+      "current": "示範狀態：目前未執行。",
+      "next": "下次工作時再核對安裝與操作步驟。",
+      "summary": "公開示範資料，並非私人聊天。",
+      "phase": "功能示範・目前未執行",
+      "groups": [
+        {
+          "id": "docs",
+          "title": "文件檢查"
+        }
+      ],
+      "tasks": [
+        {
+          "id": "readme",
+          "title": "整理安裝與啟動說明",
+          "group": "docs",
+          "status": "source_ready",
+          "detail": "示範資料：待實際驗收。",
+          "evidence": []
+        }
+      ],
+      "completed": [],
+      "suggestions": [],
+      "agents": [],
+      "events": [
+        {
+          "at": null,
+          "text": "公開示範資料，並非私人聊天。",
+          "kind": "demo"
+        }
+      ],
+      "metrics": [],
+      "updated_at": null,
+      "sync": {
+        "status": "demo",
+        "reported_at": null
+      },
+      "history_dropped": 0,
+      "demo": true,
+      "source": "public_static_demo",
+      "execution": {
+        "status": "idle",
+        "source": "public_static_demo",
+        "updated_at": null,
+        "reason": "Fixed illustrative state; no runtime observer connected."
+      },
+      "progress": {
+        "done": 0,
+        "total": 1,
+        "percent": 0
+      }
+    },
+    {
+      "id": "demo-planning",
+      "semantic_version": 2,
+      "session_id": "demo-planning",
+      "title": "功能規劃討論（示範）",
+      "goal": "確認需求優先順序，保留尚未開始的工作。",
+      "current": "示範狀態：未提供執行訊號。",
+      "next": "確認需求後再建立驗收關卡。",
+      "summary": "公開示範資料，並非私人聊天。",
+      "phase": "功能示範・執行狀態未知",
+      "groups": [],
+      "tasks": [],
+      "completed": [],
+      "suggestions": [],
+      "agents": [],
+      "events": [
+        {
+          "at": null,
+          "text": "公開示範資料，並非私人聊天。",
+          "kind": "demo"
+        }
+      ],
+      "metrics": [],
+      "updated_at": null,
+      "sync": {
+        "status": "demo",
+        "reported_at": null
+      },
+      "history_dropped": 0,
+      "demo": true,
+      "source": "public_static_demo",
+      "execution": {
+        "status": "unknown",
+        "source": "public_static_demo",
+        "updated_at": null,
+        "reason": "Fixed illustrative state; no runtime observer connected."
+      },
+      "progress": {
+        "done": 0,
+        "total": 0,
+        "percent": null
+      }
+    }
+  ]
+}
