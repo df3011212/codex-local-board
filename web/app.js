@@ -55,6 +55,73 @@ function progressCard(title,tasks,statuses,requireEvidence=false){
   const bar=element("progress");bar.max=100;bar.value=value.percent??0;bar.hidden=value.percent===null;bar.setAttribute("aria-label",title+"已完成關卡比例");
   card.append(head,bar,element("p",value.percent===null?"尚未建立驗收關卡，暫不顯示完成比例。":`${value.done} / ${value.total} 個關卡完成${requireEvidence?"並附驗證紀錄":"（明確登記）"}。`));return card;
 }
+const PLAN_KIND_LABELS={phase:"階段",module:"模組",task:"驗收項目"},planUI=new Map();
+function planProgress(value){
+  if(!value||!Number.isInteger(value.total)||value.total<0||!Number.isInteger(value.completed)||value.completed<0||value.completed>value.total)return{completed:0,total:0,percent:null};
+  const percent=value.total>0&&Number.isInteger(value.percent)&&value.percent===Math.floor(value.completed*100/value.total)?value.percent:null;
+  return{completed:value.completed,total:value.total,percent};
+}
+function projectPlan(project){
+  const supplied=project.plan,session=text(project.session_id||project.id).toLowerCase(),source=supplied?.source;
+  let full=Boolean(supplied&&text(supplied.session_id).toLowerCase()===session&&session&&Array.isArray(supplied.nodes)&&supplied.nodes.length>0&&supplied.nodes.length<=512&&["document","generated","reported"].includes(source?.kind));
+  let nodes=full?supplied.nodes.filter(node=>node&&text(node.id)&&text(node.title)&&Object.hasOwn(PLAN_KIND_LABELS,node.kind)).map(node=>({...node,id:text(node.id),title:text(node.title),detail:text(node.detail),depends_on:rows(node.depends_on),evidence:rows(node.evidence),progress:planProgress(node.progress)})):[];
+  let byId=new Map(nodes.map(node=>[node.id,node]));
+  if(full){
+    if(nodes.length!==supplied.nodes.length||byId.size!==nodes.length)full=false;
+    for(const node of nodes){let cursor=node,depth=0;const seen=new Set();while(cursor&&full){if(seen.has(cursor.id)||++depth>8){full=false;break;}seen.add(cursor.id);if(cursor.parent_id!==null&&!byId.has(cursor.parent_id)){full=false;break;}cursor=cursor.parent_id===null?null:byId.get(cursor.parent_id);}}
+  }
+  if(!full){
+    nodes=[];const groups=new Map();
+    rows(project.groups).slice(0,512).forEach((group,index)=>{if(!group||!text(group.id)||groups.has(group.id))return;const id="group-"+index;groups.set(group.id,id);nodes.push({id,parent_id:null,title:text(group.title)||"已回報關卡群組",kind:"module",status:"pending",detail:"已回報的工作群組，尚未確認為完整專案範圍。",evidence:[],depends_on:[]});});
+    rows(project.tasks).slice(0,Math.max(0,512-nodes.length)).forEach((task,index)=>{if(!task)return;nodes.push({...task,id:"task-"+index,parent_id:groups.get(task.group)||null,title:text(task.title)||"已回報驗收關卡",kind:"task",detail:text(task.detail),evidence:rows(task.evidence),depends_on:[]});});
+    const used=new Set(nodes.filter(node=>node.parent_id!==null).map(node=>node.parent_id));nodes=nodes.filter(node=>node.kind==="task"||used.has(node.id));
+    for(const node of nodes){const tasks=node.kind==="task"?[node]:nodes.filter(task=>task.parent_id===node.id),p=progress(tasks,["done","passed","frozen"],true);node.progress={completed:p.done,total:p.total,percent:p.percent};}
+    byId=new Map(nodes.map(node=>[node.id,node]));
+  }
+  const children=new Map(nodes.map(node=>[node.id,[]])),roots=[];
+  for(const node of nodes)if(node.parent_id===null)roots.push(node);else children.get(node.parent_id)?.push(node);
+  return{full,title:full?text(supplied.title):"已回報的部分工作範圍",goal:full?text(supplied.goal):text(project.goal),summary:full?text(supplied.summary):"",source:full?source:{kind:"reported",label:"依已回報關卡建立，完整範圍待 Codex 補齊",references:[]},updated_at:full?supplied.updated_at:null,nodes,byId,children,roots,progress:full?planProgress(supplied.progress):{completed:0,total:0,percent:null}};
+}
+function suggestionText(suggestion){return[text(suggestion.title),text(suggestion.detail)].filter(Boolean).join("\n\n");}
+function renderSuggestions(project){
+  const host=query("suggestions"),items=rows(project.suggestions).filter(item=>item&&text(item.title)),signature=JSON.stringify([project.id,items]);query("suggestion-count").textContent=String(items.length);
+  if(host.getAttribute("data-suggestions-signature")===signature)return;
+  const focused=document.activeElement?.getAttribute?.("data-suggestion-id");let restoreFocus=null;
+  host.setAttribute("data-suggestions-signature",signature);query("suggestion-copy-note").textContent="";query("suggestion-copy").hidden=true;query("suggestion-copy-label").hidden=true;
+  host.replaceChildren(...(items.length?items.map((item,index)=>{const card=element("article",undefined,"suggestion"),body=element("div"),button=element("button","複製建議");body.append(element("h3",item.title));if(text(item.detail))body.append(element("p",item.detail));button.type="button";button.setAttribute("data-suggestion-id",text(item.id)||String(index));button.setAttribute("aria-label","複製建議："+item.title);
+    button.onclick=async()=>{const content=suggestionText(item);try{if(typeof navigator==="undefined"||!navigator.clipboard?.writeText)throw Error("clipboard unavailable");await navigator.clipboard.writeText(content);if(host.getAttribute("data-suggestions-signature")===signature)query("suggestion-copy-note").textContent="已複製建議；尚未傳送，也不會自動執行。";}catch(_){if(host.getAttribute("data-suggestions-signature")!==signature)return;const field=query("suggestion-copy");field.value=content;field.hidden=false;query("suggestion-copy-label").hidden=false;query("suggestion-copy-note").textContent="瀏覽器未提供剪貼簿存取，請手動複製下方文字。";field.focus();field.select?.();}};
+    if(button.getAttribute("data-suggestion-id")===focused)restoreFocus=button;card.append(body,button);return card;}):[element("p","尚未收到此對話 Codex 明確回報的建議。","empty")]));restoreFocus?.focus({preventScroll:true});
+}
+function renderProjectPlan(project){
+  const plan=projectPlan(project),key=project.id||"empty";
+  if(!planUI.has(key))planUI.set(key,{search:"",unfinished:false,open:new Map(),filteredOpen:new Map(),filterKey:""});
+  const ui=planUI.get(key),host=query("plan-tree"),search=query("plan-search"),unfinished=query("plan-unfinished");
+  if(search.value!==ui.search)search.value=ui.search;unfinished.checked=ui.unfinished;
+  search.oninput=()=>{ui.search=search.value;renderProjectPlan(project);};unfinished.onchange=()=>{ui.unfinished=unfinished.checked;renderProjectPlan(project);};
+  query("plan-title").textContent=plan.title;query("plan-goal").textContent=plan.goal||"完整專案目標尚待同步。";query("plan-summary").textContent=plan.summary;query("plan-summary").hidden=!plan.summary;
+  query("plan-source-kind").textContent=plan.full?({document:"依開發文件整理",generated:"Codex 已回報計畫",reported:"已回報計畫"}[plan.source.kind]):"部分範圍";
+  query("plan-scope-note").textContent=plan.full?"以下是此對話已列出的專案範圍；與下方目前工作關卡分開計算，單次交付不代表整個專案完成。":"依已回報關卡建立，完整範圍待 Codex 補齊；下列只是目前已知的部分工作，不能視為完整專案架構。";
+  query("plan-counts").replaceChildren(...["phase","module","task"].map(kind=>element("span",plan.nodes.filter(node=>node.kind===kind).length+" "+(plan.full?PLAN_KIND_LABELS[kind]:kind==="module"?"關卡群組":PLAN_KIND_LABELS[kind]),"scope-count")));
+  const overall=plan.progress;query("plan-percent").textContent=!plan.full?"範圍待補齊":overall.percent===null?"比例未知":overall.percent+"%";const bar=query("plan-progress");bar.hidden=!plan.full||overall.percent===null;bar.value=overall.percent??0;
+  query("plan-progress-note").textContent=!plan.full?"完整專案範圍尚待補齊，暫不計算全專案比例。":overall.percent===null?"尚未提供可確認的全專案驗收比例，不以目前工作的比例代替。":overall.completed+" / "+overall.total+" 個驗收項目完成並附證據；階段與模組不重複計數。";
+  query("plan-source-label").textContent=text(plan.source.label)||"來源說明尚待同步。";query("plan-updated").textContent=plan.full?"計畫更新："+formattedTime(plan.updated_at):"此檢視由已回報關卡呈現，不會另行呼叫模型。";
+  const references=query("plan-references"),referenceSignature=JSON.stringify([key,plan.source.references]);if(references.getAttribute("data-reference-signature")!==referenceSignature){references.setAttribute("data-reference-signature",referenceSignature);references.replaceChildren(...(rows(plan.source.references).length?rows(plan.source.references).slice(0,64).map(ref=>{const row=element("div",undefined,"plan-reference"),url=safeEvidenceURL(ref.url),label=element(url?"a":"span",text(ref.label)||"來源文件");if(url){label.href=url;label.target="_blank";label.rel="noopener noreferrer";}row.append(label);if(text(ref.path))row.append(element("code",ref.path));return row;}):[element("p","尚未附來源文件；請依已回報來源確認範圍。","empty")]));}
+  const filter=text(ui.search).toLowerCase(),filterKey=JSON.stringify([filter,ui.unfinished]);if(ui.filterKey!==filterKey){ui.filterKey=filterKey;ui.filteredOpen.clear();}
+  const included=new Set(),filtered=Boolean(filter||ui.unfinished);
+  function include(node,ancestorMatch=false){const ownMatch=!filter||[node.title,node.detail,node.id].join(" ").toLowerCase().includes(filter),matches=ancestorMatch||ownMatch;let childIncluded=false;for(const child of plan.children.get(node.id)||[])if(include(child,matches))childIncluded=true;const unfinishedLeaf=node.kind==="task"&&!taskComplete(node,["done","passed","frozen"],true),leaf=node.kind==="task"&&matches&&(!ui.unfinished||unfinishedLeaf);if(leaf||childIncluded){included.add(node.id);return true;}return false;}
+  for(const root of plan.roots)include(root);
+  const countLabel="顯示 "+included.size+" / "+plan.nodes.length+" 個節點";if(query("plan-visible-count").textContent!==countLabel)query("plan-visible-count").textContent=countLabel;
+  const signature=JSON.stringify([key,plan.full,plan.nodes,filterKey]);if(host.getAttribute("data-plan-signature")===signature)return;
+  const focused=document.activeElement?.getAttribute?.("data-plan-focus"),restore=new Map(),scrollTop=host.scrollTop||0;
+  function branch(node,depth){const box=element("details",undefined,"plan-node kind-"+node.kind),head=element("summary"),title=element("span",node.title,"plan-node-title"),meta=element("span",undefined,"plan-node-meta"),body=element("div",undefined,"plan-node-body"),children=plan.children.get(node.id)||[],unverified=COMPLETE_STATUSES.has(node.status)&&!evidenceRows(node.evidence).length,p=node.progress;box.setAttribute("data-plan-node",node.id);head.setAttribute("data-plan-focus",node.id);restore.set(node.id,head);meta.append(element("span",!plan.full&&node.kind==="module"?"關卡群組":PLAN_KIND_LABELS[node.kind],"plan-kind"));
+    if(node.kind==="task")meta.append(statusBadge(node.status,unverified));else{const badge=element("span",p.percent===null?"子項驗收比例未知":"子項已驗收 "+p.completed+" / "+p.total,"status "+(p.percent===100?"passed":p.completed>0?"in_progress":"pending"));meta.append(badge);}
+    if(p.percent!==null)meta.append(element("span",node.kind==="task"?"驗收 "+p.completed+" / "+p.total+" · "+p.percent+"%":p.percent+"%","plan-node-progress"));else meta.append(element("span","比例未知","plan-node-progress"));head.append(title,meta);box.append(head);if(node.detail)body.append(element("p",node.detail));
+    if(node.depends_on.length){const names=node.depends_on.map(id=>plan.byId.get(id)?.title||"依賴內容待同步");body.append(element("p","前置依賴："+names.join("、"),"plan-dependencies"));}appendEvidence(body,node.evidence);if(!node.detail&&!node.depends_on.length&&!evidenceRows(node.evidence).length)body.append(element("p","尚未補充說明或驗收證據。"));box.append(body);
+    if(children.some(child=>included.has(child.id))){const nested=element("div",undefined,"plan-children");nested.append(...children.filter(child=>included.has(child.id)).map(child=>branch(child,depth+1)));box.append(nested);}
+    const openState=filtered?ui.filteredOpen:ui.open;box.open=openState.has(node.id)?openState.get(node.id):filtered||depth===0&&node.kind==="phase";box.ontoggle=()=>{openState.set(node.id,box.open);};return box;
+  }
+  host.setAttribute("data-plan-signature",signature);host.replaceChildren(...(included.size?plan.roots.filter(node=>included.has(node.id)).map(node=>branch(node,0)):[element("p",!plan.nodes.length?"尚未回報專案計畫或驗收關卡。":filtered?"沒有符合的驗收項目，請調整搜尋或篩選。":"尚未回報可呈現的驗收項目。","empty")]));host.scrollTop=scrollTop;if(focused)restore.get(focused)?.focus({preventScroll:true});
+}
 function render(configValue,state,preferredId,options={}){
   const focusedConversation=document.activeElement?.getAttribute?.("data-project-id");let restoreFocus=null;
   const config={...DEFAULT_CONFIG,...configValue},statuses=rows(config.complete_statuses).filter(status=>COMPLETE_STATUSES.has(status)),projects=rows(state.projects||state.sessions).map(project=>normalizeProject(project,state)),navigation=conversationGroups(projects,state),selected=projects.find(project=>project.id===preferredId)||navigation.main[0]||projects[0],current=selected||normalizeProject({id:"",title:"尚未同步任何對話",groups:[],tasks:[],agents:[],events:[]},state),sync=syncInfo(current,Date.now(),Math.min(60,Math.max(1,Number(config.poll_seconds)||5))),execution=executionInfo(current,options.runtimeUnavailable===true),filter=text(options.search).toLowerCase();
@@ -78,6 +145,7 @@ function render(configValue,state,preferredId,options={}){
   const observation=state.observation||{};query("observation-notice").hidden=!observation.limited;
   query("observation-notice").textContent=observation.limited?"已達既有對話的讀取上限；另有 "+(observation.omitted||0)+" 個對話尚未載入。此限制不會刪除任何對話。":"";
   query("summary").textContent=current.summary?"原有摘要："+current.summary:"";query("summary").hidden=!current.summary||current.summary===current.goal;query("current").textContent=current.current||"等待代理回報目前工作。";query("current-note").textContent=sync.note;query("next").textContent=current.next||"下一步尚未同步，不從工具活動猜測。";
+  renderSuggestions(current);renderProjectPlan(current);
   query("progress").replaceChildren(progressCard("整體任務",current.tasks,statuses,current.modern),...current.groups.map(group=>progressCard(group.title||"未命名群組",current.tasks.filter(task=>task.group===group.id),statuses,current.modern)));query("completion-policy").textContent=current.modern?"完成狀態且附驗證紀錄才計入；已備妥不等於驗收通過。":"依舊版明確登記的完成狀態計算；未推測對話內容。";
   if(current.source==="observed_public_messages")query("completion-policy").textContent="尚未同步驗收關卡；公開訊息不會自動轉成完成比例。";
   const outcomes=current.completed.length?current.completed:current.tasks.filter(task=>taskComplete(task,statuses,current.modern)).map(task=>({title:task.title,detail:task.detail,evidence:task.evidence}));query("outcome-count").textContent=String(outcomes.length);
@@ -100,5 +168,5 @@ async function start(){
   for(const id of["conversations","other-conversations"])query(id).addEventListener("keydown",event=>{if(!["ArrowDown","ArrowUp","Home","End"].includes(event.key))return;const buttons=[...query(id).querySelectorAll(".conversation")],index=buttons.indexOf(event.target.closest(".conversation"));if(index<0)return;event.preventDefault();const next=event.key==="Home"?0:event.key==="End"?buttons.length-1:event.key==="ArrowDown"?Math.min(index+1,buttons.length-1):Math.max(0,index-1);buttons[next]?.focus();});
   query("refresh").addEventListener("click",refresh);query("project").addEventListener("change",()=>{selected=query("project").value;display();});query("chat-search").addEventListener("input",display);await refresh();
 }
-if(typeof module!=="undefined"&&module.exports)module.exports={progress,render,taskComplete,normalizeProject,conversationGroups,executionInfo,syncInfo,safeEvidenceURL};
+if(typeof module!=="undefined"&&module.exports)module.exports={progress,render,taskComplete,normalizeProject,conversationGroups,executionInfo,syncInfo,safeEvidenceURL,projectPlan,planProgress,suggestionText};
 if(typeof document!=="undefined")document.addEventListener("DOMContentLoaded",start);

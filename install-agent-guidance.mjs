@@ -85,13 +85,15 @@ function shellQuote(value) {
 export async function render(root, node) {
   const source = await fs.readFile(join(HERE, 'docs', 'agent-guidance.template.md'), 'utf8');
   const reporter = join(root, 'agent_report.mjs');
-  for (const path of [node, reporter]) {
+  const planReporter = join(root, 'plan_report.mjs');
+  for (const path of [node, reporter, planReporter]) {
     const stat = await fs.lstat(path);
     if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('Node and reporter must be ordinary files');
   }
   // The contract owns these flags; use the platform's normal shell quoting.
   const command = `${process.platform === 'win32' ? '& ' : ''}${shellQuote(node)} ${shellQuote(reporter)} --state ${shellQuote(join(root, 'state-v2.json'))}`;
-  return source.replaceAll('{{REPORT_COMMAND}}', command);
+  const planCommand = `${process.platform === 'win32' ? '& ' : ''}${shellQuote(node)} ${shellQuote(planReporter)} --state ${shellQuote(join(root, 'project-plans.json'))}`;
+  return source.replaceAll('{{REPORT_COMMAND}}', command).replaceAll('{{PLAN_COMMAND}}', planCommand);
 }
 
 export async function change({ root, boardRoot = HERE, node = process.execPath, action = 'install', apply = false }) {

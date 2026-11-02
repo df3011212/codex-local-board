@@ -111,6 +111,30 @@ node install-agent-guidance.mjs uninstall --apply
 
 根工作使用真實 `CODEX_THREAD_ID` UUID；缺少就等待明確 ID，不隨機冒充聊天室。spawn 子代理時要在任務訊息帶父工作 UUID、穩定分工 ID 與角色；子代理只更新該分工，不覆寫父目標或關卡。工具停止不等於交付完成，沒有已定義關卡不顯示假百分比；費用／Token／工時未知就不填。開始多步工作、有意義的里程碑和最終交付各更新一次即可，不用每次工具呼叫都製造事件。
 
+## 每個聊天室會自動更新嗎？
+
+**畫面每五秒自動讀取，工作內容由該聊天室的 Codex 明確回報。** 已載入全域指導的工作會在開始、里程碑和交付時更新目標、目前工作、下一步、成果與建議；不需要每次執行 `Sync-All-Chats.cmd`。只有想補齊舊對話、或原對話尚未回報時才需要明確整理。舊工作不保證熱載入新的全域指導；可在原對話繼續工作時請 Codex 依看板指導更新。單純開著網頁不會另叫 AI 理解整段對話，也不會讓未採納的建議自己開始執行。
+
+### 完成之後的下一步建議
+
+`next` 顯示目前工作的後續安排，`suggestions:[{id,title,detail}]` 顯示 Codex **公開回覆裡明確提出**、尚未開始的後續建議。每次最多八項，可複製文字帶回原對話；看板不會代替使用者發訊息、批准範圍或執行建議。沒有明確回報就顯示尚無建議，不從灰色輸入提示、未送出草稿、內部思考或工具日誌重建建議。
+
+### 專案架構總覽與跨階段進度
+
+每個對話可有獨立的**專案整體架構**：專案目標 → 階段 → 模組 → 驗收任務，並列出依賴、來源文件與已完成的任務葉比例。支援收合、搜尋與只看未完成。「目前工作關卡」和「全專案驗收」分開計算；單次工作 100% 不會把仍有後續階段的整個專案變成 100%。
+
+有藍圖、README、開發或安裝文件時，由工作的 Codex 依指定文件建立架構並附引用；不同版本的來源、技術選擇與階段編號要在摘要保留差異。沒有文件時，由同一個工作 Codex 依已知需求建立 `generated` 初始計畫，標示待確認範圍，不額外啟動一個模型。之後沿用穩定節點 ID 更新進度，不在每一輪完成時清掉原來的待做項目。沒有完整計畫的舊對話只能先顯示「已回報部分關卡」，全專案比例保持未知；這種有限資料不冒稱完整開發計畫。
+
+計畫只存本機私人 `project-plans.json`，不混入即時工作回報或 GitHub。回報程式為 `plan_report.mjs`；它接受已整理好的資料，不會自動掃描任意工作目錄。先看不讀寫資料的範例：
+
+```powershell
+.\runtime\node.exe .\plan_report.mjs --state 'C:\MyBoard\project-plans.json' --example
+```
+
+完整計畫 JSON 包含 `title/goal/summary/source/nodes`，source 為 `{kind:"document"|"generated",label,references:[{label,path或url}]}`。節點包含 `id,parent_id,title,kind,status,detail,evidence,depends_on`；`kind` 為 `phase/module/task`，頂層 parent_id 為 null。寫入時以 `--state <獨立JSON絕對路徑> --session-id <原對話真UUID> --json-file <自己整理的JSON>` 執行。只更新既有節點時加 `--patch`，payload 使用 `{nodes:[{id,status,detail,evidence}]}`，不會更動其他聊天室或刪除整體範圍。
+
+上限為每計畫 512 個節點、深度 8、64 個來源引用，單次回報 512 KiB、儲存 8 MiB／100 個對話；超限會拒絕而不截斷。父節點比例只從後代 task 葉的 `done/passed/frozen` 與非空證據計算，不能靠父節點自己標完成灌入百分比；沒有任務葉時不顯示比例。文件盤點、來源候選、草案與尚未重測的交付聲明必須說清楚，不能改寫成本輪驗收通過。
+
 ### 已存在對話的唯讀來源
 
 主要 Node 看板預設還會嘗試從本機 Codex 索引列出可確認的使用者根對話，只讀取公開使用者訊息與明確公開的助理訊息作為簡短來源。這是沒有額外 LLM 的有限資料整理，**不是把工具日誌猜成完成進度，也不是理解全部歷史**。子代理與未知來源不冒充另一個使用者聊天室；推理／analysis、系統指導、工具輸入輸出不會進入這條來源。
@@ -306,6 +330,8 @@ node --test tests/board-node.test.mjs
 node --test tests/codex-titles.test.mjs
 node --test tests/codex-execution.test.mjs
 node --test tests/execution-merge.test.mjs
+node --test tests/project-plan.test.mjs
+node --test tests/plan-integration.test.mjs
 node --test tests/test_observer.mjs
 node --test tests/summary-merge.test.mjs
 node --test tests/sync-all.test.mjs

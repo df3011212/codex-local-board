@@ -8,12 +8,14 @@ const testRoot = await fs.mkdtemp(join(tmpdir(), 'codex-guidance-test-'));
 const board = join(testRoot, "board with spaces and ' quote");
 await fs.mkdir(board);
 await fs.writeFile(join(board, 'agent_report.mjs'), '// synthetic reporter fixture\n');
+await fs.writeFile(join(board, 'plan_report.mjs'), '// synthetic project plan fixture\n');
 const node = process.execPath;
 try {
   assert.equal(codexHome({ CODEX_HOME: testRoot }), resolve(testRoot));
   const rendered = await render(board, node);
   assert.ok(rendered.includes(process.platform === 'win32' ? "board with spaces and '' quote" : "board with spaces and '\"'\"' quote"));
   assert.ok(!rendered.includes('{{REPORT_COMMAND}}'));
+  assert.ok(!rendered.includes('{{PLAN_COMMAND}}'));assert.ok(rendered.includes('project-plans.json'));assert.ok(rendered.includes('plan_report.mjs'));
   for (const before of [Buffer.alloc(0), Buffer.from('# Existing\r\n正文\r\n', 'utf8'),
     Buffer.from('# No newline'), Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('原文\n')])]) {
     const after = replaceBlock(before, rendered);

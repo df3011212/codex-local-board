@@ -27,7 +27,7 @@ BOARD_FILES = frozenset({
     "config.example.json", "state.example.json", "web/index.html", "web/app.js",
     "web/styles.css", "docs/agent-guidance.template.md",
     "codex-observer.mjs",
-    "codex-titles.mjs", "codex-execution.mjs", "使用說明.txt", "sync-all.mjs", "Sync-All-Chats.cmd",
+    "codex-titles.mjs", "codex-execution.mjs", "project-plan.mjs", "plan_report.mjs", "使用說明.txt", "sync-all.mjs", "Sync-All-Chats.cmd",
 })
 PACKAGE_FILES = frozenset({
     "LICENSE", "NOTICE", "package.json", "README.ko.md", "README.md",

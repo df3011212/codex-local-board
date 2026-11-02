@@ -27,3 +27,8 @@ test-results/
 conversation-summaries.json
 conversation-summaries.json.*
 .conversation-summaries.json.*
+
+# Private per-conversation project architecture
+project-plans.json
+project-plans.json.*
+.project-plans.json.*

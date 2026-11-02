@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("node:assert/strict"), fs=require("node:fs"), path=require("node:path"), vm=require("node:vm");
 const root=path.resolve(__dirname,"..");
-const {progress,taskComplete,syncInfo,safeEvidenceURL,conversationGroups,executionInfo}=require(path.join(root,"web/app.js"));
+const {progress,taskComplete,syncInfo,safeEvidenceURL,conversationGroups,executionInfo,projectPlan,planProgress,suggestionText}=require(path.join(root,"web/app.js"));
 const complete=["done","passed","frozen"];
 assert.deepEqual(progress([],complete),{done:0,total:0,percent:null});
 assert.equal(progress([{status:"source_ready"}],complete).percent,0);
@@ -152,6 +152,42 @@ assert.match(html,/<html lang="zh-Hant">/);assert.match(css,/@media\(max-width:9
 assert.match(html,/<select id="project" hidden aria-hidden="true" tabindex="-1">/);
 assert.match(html,/<h2>對話<\/h2>/);
 assert.match(html,/<details id="other-tasks" class="other-tasks" hidden>/);assert.match(html,/<h2>工作分工<\/h2>/);
-assert.match(html,/<h2>關卡完成比例<\/h2>/);assert.match(html,/id="project-execution"[^>]*role="status"[^>]*aria-live="polite"/);assert.match(css,/@keyframes execution-spin/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.execution-mark\.running:before\{animation:none!important/);
+assert.match(html,/<h2>目前工作關卡完成比例<\/h2>/);assert.match(html,/id="project-execution"[^>]*role="status"[^>]*aria-live="polite"/);assert.match(css,/@keyframes execution-spin/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\.execution-mark\.running:before\{animation:none!important/);
 assert.match(css,/white-space:nowrap;overflow:hidden;text-overflow:ellipsis/);
-console.log("PASS: v1/v2 semantic DOM, evidence-gated milestones, zero-task unknown progress, assignment/current separation, safe text/URLs and accessible responsive structure (not a browser pixel test).");
+assert.deepEqual(planProgress({completed:1,total:3,percent:33}),{completed:1,total:3,percent:33});
+assert.deepEqual(planProgress({completed:1,total:3,percent:null}),{completed:1,total:3,percent:null});
+assert.equal(planProgress({completed:1,total:3,percent:100}).percent,null);
+assert.equal(planProgress({completed:4,total:3,percent:100}).percent,null);
+assert.equal(planProgress({completed:0,total:0,percent:0}).percent,null);
+assert.equal(suggestionText({title:"  檢查功能  ",detail:"  先檢查再決定  "}),"檢查功能\n\n先檢查再決定");
+const planned=structuredClone(v2),p=planned.projects[0];
+p.suggestions=[{id:"review",title:"安排下一輪驗收",detail:"<script>不會被當作程式執行</script>"}];
+p.plan={session_id:p.session_id,title:"完整已列專案範圍",goal:"跨階段的專案目標",summary:"來源研究與目前實作的差異須由工作 Codex 明示。",source:{kind:"document",label:"依已核對開發文件",references:[{label:"規格文件",path:"C:\\project\\docs\\plan.md"},{label:"公開文件",url:"https://example.test/spec"},{label:"不安全連結只顯示文字",url:"javascript:alert(1)"}]},updated_at:new Date().toISOString(),progress:{completed:1,total:3,percent:33},nodes:[
+  {id:"phase-one",parent_id:null,title:"第一階段",kind:"phase",status:"in_progress",detail:"工作階段",depends_on:[],evidence:[],progress:{completed:1,total:3,percent:33}},
+  {id:"module-one",parent_id:"phase-one",title:"資料模組",kind:"module",status:"in_progress",detail:"已知模組",depends_on:[],evidence:[],progress:{completed:1,total:3,percent:33}},
+  {id:"accept-one",parent_id:"module-one",title:"已驗收項目",kind:"task",status:"passed",detail:"有驗證紀錄",depends_on:[],evidence:[{label:"測試通過"}],progress:{completed:1,total:1,percent:100}},
+  {id:"accept-two",parent_id:"module-one",title:"尚待驗收項目",kind:"task",status:"done",detail:"尚未附證據",depends_on:["accept-one"],evidence:[],progress:{completed:0,total:1,percent:0}},
+  {id:"accept-three",parent_id:"module-one",title:"尚待開始項目",kind:"task",status:"pending",detail:"工作說明",depends_on:["accept-two"],evidence:[],progress:{completed:0,total:1,percent:0}}
+]};
+const flatten=node=>[node,...node.children.flatMap(flatten)],planNodes=()=>flatten(nodes.get("plan-tree")),planNode=id=>planNodes().find(node=>node.getAttribute("data-plan-node")===id);
+assert.equal(projectPlan(p).full,true);assert.equal(projectPlan(p).nodes.length,5);
+render(config,planned,p.id);
+assert.equal(nodes.get("plan-title").textContent,"完整已列專案範圍");assert.equal(nodes.get("plan-percent").textContent,"33%");assert.equal(nodes.get("plan-progress").value,33);assert.equal(nodes.get("plan-progress").hidden,false);
+assert.ok(nodes.get("progress").textContent.includes("40%"),"Current checkpoints remain independent from whole-project scope");
+assert.ok(nodes.get("plan-counts").textContent.includes("1 階段1 模組3 驗收項目"));assert.equal(planNode("phase-one").open,true);assert.equal(planNode("module-one").open,false);assert.equal(planNode("accept-one").open,false);
+assert.ok(planNode("accept-two").textContent.includes("已回報，待驗證"));assert.ok(planNode("accept-two").textContent.includes("前置依賴：已驗收項目"));assert.ok(!planNode("accept-two").textContent.includes("前置依賴：accept-one"));
+const refs=flatten(nodes.get("plan-references"));assert.ok(refs.some(n=>n.tagName==="code"&&n.textContent==="C:\\project\\docs\\plan.md"));assert.equal(refs.filter(n=>n.href).length,1);assert.equal(refs.find(n=>n.href).href,"https://example.test/spec");
+assert.equal(nodes.get("suggestion-count").textContent,"1");assert.ok(nodes.get("suggestions").textContent.includes("<script>不會被當作程式執行</script>"));assert.equal(flatten(nodes.get("suggestions")).filter(n=>n.tagName==="button").length,1);assert.equal(nodes.get("next").textContent,p.next);
+const moduleNode=planNode("module-one");moduleNode.open=true;moduleNode.ontoggle();const summaryNode=moduleNode.children[0];summaryNode.focus();render(config,planned,p.id);assert.equal(planNode("module-one"),moduleNode,"Unchanged polling keeps native details and focus intact");assert.equal(document.activeElement,summaryNode);
+p.plan.nodes[4].detail="已更新的工作說明";render(config,planned,p.id);assert.equal(planNode("module-one").open,true);assert.equal(document.activeElement.getAttribute("data-plan-focus"),"module-one");assert.ok(planNode("accept-three").textContent.includes("已更新的工作說明"));
+nodes.get("plan-search").value="尚待開始";nodes.get("plan-search").oninput();assert.ok(planNode("phase-one"));assert.ok(planNode("module-one"));assert.ok(planNode("accept-three"));assert.equal(planNode("accept-one"),undefined);assert.equal(planNode("module-one").open,true);assert.equal(nodes.get("plan-visible-count").textContent,"顯示 3 / 5 個節點");
+render(config,planned,p.id);assert.equal(nodes.get("plan-search").value,"尚待開始");assert.equal(planNode("accept-one"),undefined);
+nodes.get("plan-search").value="";nodes.get("plan-search").oninput();assert.equal(planNode("module-one").open,true,"Normal open state survives temporary search expansion");
+nodes.get("plan-unfinished").checked=true;nodes.get("plan-unfinished").onchange();assert.equal(planNode("accept-one"),undefined);assert.ok(planNode("accept-two"),"Done without evidence remains unfinished");assert.ok(planNode("accept-three"));
+render(config,planned,planned.projects[1].id);assert.equal(nodes.get("plan-search").value,"");assert.equal(nodes.get("plan-unfinished").checked,false);assert.equal(nodes.get("plan-percent").textContent,"範圍待補齊");assert.ok(nodes.get("plan-scope-note").textContent.includes("只是目前已知的部分工作"));assert.equal(nodes.get("plan-progress").hidden,true);assert.equal(nodes.get("suggestion-count").textContent,"0");
+render(config,planned,p.id);assert.equal(nodes.get("plan-unfinished").checked,true);assert.equal(planNode("accept-one"),undefined);nodes.get("plan-unfinished").checked=false;nodes.get("plan-unfinished").onchange();
+p.plan.progress.percent=null;render(config,planned,p.id);assert.equal(nodes.get("plan-percent").textContent,"比例未知");assert.equal(nodes.get("plan-progress").hidden,true);
+const mismatch=structuredClone(p);mismatch.plan.session_id="99999999-9999-4999-8999-999999999999";assert.equal(projectPlan(mismatch).full,false,"A plan from another conversation is never shown");
+const cycle=structuredClone(p);cycle.plan.nodes[0].parent_id="module-one";assert.equal(projectPlan(cycle).full,false,"Malformed graphs fall back without recursive loops");
+assert.match(html,/id="suggestions-heading">建議下一步/);assert.match(html,/建議尚未開始，不會自動執行/);assert.match(html,/id="plan-heading">專案架構總覽/);assert.match(html,/id="plan-source-details"/);assert.match(css,/\.plan-tree\{max-height:620px;overflow-y:auto/);
+console.log("PASS: semantic DOM, evidence-gated separate scope/checkpoint progress, per-chat accessible plan hierarchy/filter/focus, explicit copy-only suggestions, native names/runtime and safe responsive structure (not a browser pixel test).");

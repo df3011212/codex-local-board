@@ -2,9 +2,9 @@
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {ROOT,LIMITS,SOURCE,uuid,identity,text,keys,groups,tasks,completed,metrics,agent,evidence,list,now,emptyProject,lockedUpdate,argumentsFor,readJSON,parseShortJSON} from './board-node.mjs';
+import {ROOT,LIMITS,SOURCE,uuid,identity,text,keys,groups,tasks,completed,suggestions,metrics,agent,evidence,list,now,emptyProject,lockedUpdate,argumentsFor,readJSON,parseShortJSON} from './board-node.mjs';
 
-export const EXAMPLE={title:'範例：以名稱選擇物品',goal:'請換成這個聊天室的實際目標',current:'請描述目前正在做的事，不抄工具名稱',next:'請描述下一個可驗證步驟',summary:'這是格式範例，不代表任何工作已完成。',phase:'建立檢查點',groups:[{id:'delivery',title:'交付關卡'}],tasks:[{id:'verify',title:'完成並核對實際驗證',group:'delivery',status:'pending',detail:'真正完成後才提供證據並改為passed或done。'}],agents:[],metrics:[]};
+export const EXAMPLE={title:'範例：以名稱選擇物品',goal:'請換成這個聊天室的實際目標',current:'請描述目前正在做的事，不抄工具名稱',next:'請描述下一個可驗證步驟',summary:'這是格式範例，不代表任何工作已完成。',phase:'建立檢查點',groups:[{id:'delivery',title:'交付關卡'}],tasks:[{id:'verify',title:'完成並核對實際驗證',group:'delivery',status:'pending',detail:'真正完成後才提供證據並改為passed或done。'}],completed:[],suggestions:[],agents:[],metrics:[]};
 
 function mergeAgents(previous,updates,at){
  const rows=previous.map(v=>structuredClone(v));
@@ -20,7 +20,7 @@ export async function report({statePath,sessionId,parentSessionId,agentId,role,p
  const session=uuid(sessionId),parent=parentSessionId?uuid(parentSessionId):null;
  if(!path.isAbsolute(statePath))throw Error('Use one absolute shared semantic state path');
  if(path.extname(statePath).toLowerCase()!=='.json')throw Error('Semantic state must be a JSON file');
- keys(payload,parent?['status','assignment','current','next','detail','evidence']:['title','goal','current','next','summary','phase','groups','tasks','completed','agents','metrics'],parent?['status']:['title','goal','current','next']);
+ keys(payload,parent?['status','assignment','current','next','detail','evidence']:['title','goal','current','next','summary','phase','groups','tasks','completed','suggestions','agents','metrics'],parent?['status']:['title','goal','current','next']);
  if(parent){identity(agentId);text(role,120);}
  return lockedUpdate(statePath,state=>{
   const at=now(),target=parent??session;let index=state.projects.findIndex(p=>p.id===target);
@@ -34,15 +34,16 @@ export async function report({statePath,sessionId,parentSessionId,agentId,role,p
    const next=agent({...old,id:agentId,session_id:session===parent?null:session,role,...payload,evidence:payload.evidence===undefined?(old?.evidence??[]):evidence(payload.evidence),updated_at:at,...(session===parent?{}:{owner_session_id:session})},true);
    if(old)project.agents[project.agents.indexOf(old)]=next;else{if(project.agents.length>=LIMITS.agents)throw Error('Agent capacity reached');project.agents.push(next);}
   }else{
-   const previousMeaning=JSON.stringify([project.goal,project.current,project.next,project.summary,project.phase,project.tasks,project.completed,project.metrics]);
+   const previousMeaning=JSON.stringify([project.goal,project.current,project.next,project.summary,project.phase,project.tasks,project.completed,project.suggestions,project.metrics]);
    for(const key of ['title','goal','current','next','summary','phase'])if(payload[key]!==undefined)project[key]=text(payload[key],key==='title'||key==='phase'?120:1200);
    if(payload.groups!==undefined)project.groups=groups(payload.groups);
    if(payload.tasks!==undefined)project.tasks=tasks(payload.tasks,project.groups);
    if(payload.completed!==undefined)project.completed=completed(payload.completed);
+   if(payload.suggestions!==undefined)project.suggestions=suggestions(payload.suggestions);
    if(payload.metrics!==undefined)project.metrics=metrics(payload.metrics);
    if(payload.agents!==undefined)project.agents=mergeAgents(project.agents,payload.agents,at);
    project.updated_at=at;project.sync={status:'synced',reported_at:at};
-   const nextMeaning=JSON.stringify([project.goal,project.current,project.next,project.summary,project.phase,project.tasks,project.completed,project.metrics]);
+   const nextMeaning=JSON.stringify([project.goal,project.current,project.next,project.summary,project.phase,project.tasks,project.completed,project.suggestions,project.metrics]);
    if(previousMeaning!==nextMeaning){project.events.push({at,text:project.summary||project.current||project.goal,kind:'semantic'});if(project.events.length>LIMITS.events){const excess=project.events.length-LIMITS.events;project.events.splice(0,excess);project.history_dropped+=excess;}}
   }
   state.updated_at=at;state.source=SOURCE;return state;
