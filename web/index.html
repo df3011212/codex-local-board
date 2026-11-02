@@ -16,10 +16,12 @@
     <label class="search-label" for="chat-search">搜尋對話</label><input id="chat-search" type="search" placeholder="搜尋對話名稱" autocomplete="off">
     <label class="select-label" for="project" hidden>選擇對話</label><select id="project" hidden aria-hidden="true" tabindex="-1"><option value="">正在讀取…</option></select>
     <div id="conversations" class="conversation-list"></div>
+    <details id="other-tasks" class="other-tasks" hidden><summary>其他同步任務 <span id="other-task-count" class="count">0</span></summary><p class="other-task-note">尚未取得 Codex 原始標題的任務，另外收在這裡。</p><div id="other-conversations" class="conversation-list"></div></details>
   </aside>
   <main id="workspace" aria-label="對話工作進度">
     <div class="sync-bar"><span id="sync-state" class="sync-status" role="status">等待工作摘要</span><span id="updated">尚未同步</span></div>
     <p id="observation-notice" class="observation-notice" role="status" hidden></p>
+    <p id="selection-kind" class="selection-kind" hidden>目前選擇的是其他同步任務，尚未取得 Codex 原始對話標題。</p>
     <section class="banner" aria-labelledby="project-title"><p class="phase" id="phase">等待對話同步</p><h2 id="project-title">尚未選擇對話</h2><p class="section-kicker">這個對話要完成什麼</p><p id="goal" class="goal">尚未同步需求目標。</p><p id="summary" class="legacy-summary" hidden></p></section>
     <div class="focus-grid">
       <section class="focus-card current-card"><p class="section-kicker"><span class="focus-dot" aria-hidden="true"></span>目前正在做</p><h2 id="current">等待代理回報目前工作。</h2><p id="current-note"></p></section>
@@ -31,7 +33,7 @@
     <div class="project-grid" id="layout">
       <section class="panel" aria-labelledby="tasks-heading"><div class="panel-head"><div><h2 id="tasks-heading">任務關卡</h2><p>每一項都有明確狀態，完成與驗證分開呈現。</p></div></div><div id="tasks"></div></section>
       <aside id="sidebar" class="detail-sidebar">
-        <section class="panel" id="agents-panel"><div class="panel-head"><div><h2>子代理分工</h2><p>角色、實際指派與目前工作。</p></div></div><div id="agents"></div></section>
+        <section class="panel" id="agents-panel"><div class="panel-head"><div><h2>工作分工</h2><p>主代理、實際子代理的角色與目前工作。</p></div></div><div id="agents"></div></section>
         <section class="panel" id="events-panel"><div class="panel-head"><div><h2>重要進展</h2><p>保留有意義的工作更新，不混入逐筆工具活動。</p></div></div><div id="events"></div></section>
       </aside>
     </div>

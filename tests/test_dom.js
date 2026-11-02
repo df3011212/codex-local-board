@@ -1,0 +1,135 @@
+"use strict";
+const assert=require("node:assert/strict"), fs=require("node:fs"), path=require("node:path"), vm=require("node:vm");
+const root=path.resolve(__dirname,"..");
+const {progress,taskComplete,syncInfo,safeEvidenceURL,conversationGroups}=require(path.join(root,"web/app.js"));
+const complete=["done","passed","frozen"];
+assert.deepEqual(progress([],complete),{done:0,total:0,percent:null});
+assert.equal(progress([{status:"source_ready"}],complete).percent,0);
+assert.equal(progress([{status:"in_progress"}],complete).percent,0);
+assert.equal(progress([{status:"passed"},{status:"pending"}],complete).percent,50);
+assert.equal(progress(Array.from({length:200},(_,i)=>({status:i===199?"pending":"done"})),complete).percent,99);
+assert.equal(progress([{status:"done"}],complete).percent,100);
+assert.equal(progress([{status:"source_ready",evidence:[{label:"source only"}]}],["source_ready"],true).percent,0);
+assert.equal(progress([{status:"done",evidence:[]}],complete,true).percent,0);
+assert.equal(progress([{status:"passed",evidence:[{label:"獨立檢查"}]}],complete,true).percent,100);
+assert.equal(taskComplete({status:"frozen",evidence:[{label:"檢查未通過",verified:false}]},complete,true),false);
+assert.equal(safeEvidenceURL("javascript:alert(1)"),"");
+assert.equal(safeEvidenceURL("file:///private/state"),"");
+assert.equal(safeEvidenceURL("https://name:password@example.test/"),"");
+assert.equal(safeEvidenceURL("https://example.test/proof"),"https://example.test/proof");
+
+class Node {
+  constructor(tag){this.tagName=tag;this.children=[];this.attributes={};this._text="";this.hidden=false;this.open=false;}
+  set textContent(value){this._text=String(value);this.children=[];}
+  get textContent(){return this._text+this.children.map(child=>child.textContent).join("");}
+  set innerHTML(_value){throw Error("Unsafe dynamic HTML insertion");}
+  append(...children){this.children.push(...children);}
+  replaceChildren(...children){this.children=children;this._text="";}
+  setAttribute(key,value){this.attributes[key]=String(value);}
+  getAttribute(key){return this.attributes[key]??null;}
+  focus(){document.activeElement=this;}
+}
+const html=fs.readFileSync(path.join(root,"web/index.html"),"utf8"), nodes=new Map();
+for(const match of html.matchAll(/id="([^"]+)"/g))nodes.set(match[1],new Node("div"));
+const document={title:"",getElementById:id=>{assert.ok(nodes.has(id),"Missing DOM target "+id);return nodes.get(id);},createElement:tag=>new Node(tag),addEventListener:()=>{}};
+const context={module:{exports:{}},document,Intl,Date,Set,Object,URL};
+vm.runInNewContext(fs.readFileSync(path.join(root,"web/app.js"),"utf8"),context);
+const render=context.module.exports.render;
+const state=JSON.parse(fs.readFileSync(path.join(root,"state.example.json"),"utf8"));
+const config=JSON.parse(fs.readFileSync(path.join(root,"config.example.json"),"utf8"));
+state.projects[0].tasks[0].status="done";
+state.projects[0].tasks[1].detail="<img src=x onerror=alert(1)>";
+assert.equal(render(config,state),"website-demo");
+assert.equal(nodes.get("project").children.length,2);
+assert.equal(nodes.get("tasks").children.length,4);
+assert.ok(nodes.get("progress").textContent.includes("25%"));
+assert.equal(nodes.get("progress").children[0].children[1].value,25);
+assert.ok(nodes.get("tasks").textContent.includes("<img src=x onerror=alert(1)>"));
+assert.equal(nodes.get("progress").children[0].children[1].attributes["aria-label"],"整體任務已完成關卡比例");
+assert.equal(render(config,state,"automation-demo"),"automation-demo");
+assert.equal(nodes.get("tasks").children.length,1);
+config.show_agents=false;config.show_events=false;
+render(config,state,"automation-demo");assert.equal(nodes.get("sidebar").hidden,true);
+assert.ok(nodes.get("layout").className.includes("no-sidebar"));
+state.projects=[];render(config,state);
+assert.equal(nodes.get("project").disabled,true);
+assert.ok(nodes.get("progress").textContent.includes("待建立"));
+assert.ok(!nodes.get("progress").textContent.includes("100%"));
+const v2=JSON.parse(fs.readFileSync(path.join(root,"tests/fixtures/board-v2-demo.json"),"utf8"));
+config.show_agents=true;config.show_events=true;
+assert.equal(render(config,v2),v2.projects[0].id);
+assert.equal(nodes.get("goal").textContent,v2.projects[0].goal);
+assert.equal(nodes.get("current").textContent,v2.projects[0].current);
+assert.equal(nodes.get("next").textContent,v2.projects[0].next);
+assert.ok(nodes.get("progress").textContent.includes("40%"));
+assert.ok(nodes.get("progress").textContent.includes("33%"));
+assert.ok(nodes.get("progress").textContent.includes("50%"));
+assert.equal(nodes.get("outcomes").children.length,2);
+assert.ok(nodes.get("agents").textContent.includes("負責首頁、聯絡表單與手機版面。"));
+assert.ok(nodes.get("agents").textContent.includes("目前：調整表單標籤、錯誤提示與焦點順序。"));
+assert.ok(!nodes.get("agents").textContent.includes("interface-owner"));
+assert.ok(!nodes.get("events").textContent.includes("SubagentStart"));
+assert.ok(nodes.get("technical").textContent.includes(v2.projects[0].session_id));
+assert.equal(nodes.get("metrics").hidden,false);
+assert.equal(nodes.get("conversations").children[0].children.length,1);
+assert.equal(nodes.get("conversations").children[0].textContent,v2.projects[0].title);
+assert.equal(nodes.get("conversations").children[0].title,v2.projects[0].title);
+assert.ok(!nodes.get("conversations").textContent.includes(v2.projects[0].current));
+const withNative=structuredClone(v2);withNative.projects[0].conversation_title="原生對話名稱："+"完整名稱不應在資料中被截斷".repeat(20);withNative.projects[0].conversation_title_source="codex_session_index";
+render(config,withNative);assert.equal(nodes.get("project-title").textContent,withNative.projects[0].conversation_title);assert.equal(nodes.get("conversations").children[0].textContent,withNative.projects[0].conversation_title);assert.equal(nodes.get("project").children[0].textContent,withNative.projects[0].conversation_title);
+render(config,withNative,withNative.projects[0].id,{search:"完整名稱"});assert.equal(nodes.get("conversations").children.length,1);
+const classified=structuredClone(v2);classified.conversation_titles={available:true};classified.projects[0].conversation_title="完全相同的原生名稱";classified.projects[0].conversation_title_source="codex_session_index";
+classified.projects.reverse();
+assert.equal(render(config,classified),v2.projects[0].id,"An unnamed task must not become the initial selection before native conversations");
+assert.equal(nodes.get("conversation-count").textContent,"1");
+assert.equal(nodes.get("conversations").children.length,1);
+assert.equal(nodes.get("conversations").textContent,"完全相同的原生名稱");
+assert.equal(nodes.get("other-conversations").children.length,1);
+assert.equal(nodes.get("other-conversations").textContent,v2.projects[1].title);
+assert.equal(nodes.get("other-tasks").hidden,false);assert.equal(nodes.get("other-tasks").open,false);
+assert.equal(nodes.get("other-task-count").textContent,"1");assert.equal(nodes.get("selection-kind").hidden,true);
+assert.equal(nodes.get("project").children.length,2,"Both groups remain selectable; no report is dropped");
+nodes.get("other-tasks").open=true;
+assert.equal(render(config,classified,v2.projects[1].id),v2.projects[1].id);
+assert.equal(nodes.get("selection-kind").hidden,false);assert.equal(nodes.get("other-tasks").open,true);
+const focusedOther=nodes.get("other-conversations").children[0];focusedOther.focus();
+const renamed=structuredClone(classified);renamed.projects[1].conversation_title="已重新命名，原字樣不變";
+render(config,renamed,v2.projects[1].id);
+assert.equal(nodes.get("other-tasks").open,true);assert.equal(nodes.get("project").value,v2.projects[1].id);
+assert.equal(nodes.get("conversations").textContent,"已重新命名，原字樣不變");
+assert.equal(document.activeElement.getAttribute("data-project-id"),v2.projects[1].id);assert.notEqual(document.activeElement,focusedOther,"Polling restores focus to the replacement button");
+nodes.get("other-tasks").open=false;render(config,renamed,v2.projects[1].id);assert.equal(nodes.get("other-tasks").open,false,"Polling must not override a manual collapse while another task stays selected");
+render(config,renamed,v2.projects[1].id,{search:"已重新命名"});assert.equal(nodes.get("conversations").children.length,1);assert.equal(nodes.get("selection-kind").hidden,false);
+const noIndex=structuredClone(classified);noIndex.conversation_titles.available=false;
+render(config,noIndex);assert.equal(nodes.get("conversation-count").textContent,"2");assert.equal(nodes.get("other-tasks").hidden,true);assert.equal(nodes.get("conversations").children.length,2);
+assert.equal(conversationGroups([{id:"a",title:"ordinary"}],{conversation_titles:{available:true}}).main.length,1,"An available index with no matching labels must not empty the board");
+const summaryFixture=structuredClone(classified);summaryFixture.projects[1].source="conversation_summary";
+render(config,summaryFixture,summaryFixture.projects[1].id);assert.equal(nodes.get("sync-state").textContent,"已整理原對話");assert.ok(nodes.get("updated").textContent.startsWith("整理時間："));assert.ok(nodes.get("current-note").textContent.includes("不代表本輪重新驗證"));assert.equal(nodes.get("conversations").textContent,"完全相同的原生名稱");assert.equal(nodes.get("other-conversations").children.length,1);
+document.activeElement=null;
+render(config,v2,v2.projects[1].id);
+assert.equal(nodes.get("metrics").hidden,true);
+assert.equal(nodes.get("sync-state").textContent,"正在等待");
+assert.equal(nodes.get("progress").children[0].children[1].hidden,true);
+assert.ok(nodes.get("progress").textContent.includes("待建立"));
+assert.ok(!nodes.get("progress").textContent.includes("0%"));
+assert.ok(!nodes.get("progress").textContent.includes("100%"));
+render(config,v2,v2.projects[0].id,{search:"庫存"});
+assert.equal(nodes.get("conversations").children.length,1);
+assert.ok(nodes.get("conversations").textContent.includes("庫存"));
+const invalid=structuredClone(v2);invalid.projects[0].tasks[2].status="done";
+render(config,invalid);
+assert.ok(nodes.get("progress").textContent.includes("40%"));
+assert.ok(nodes.get("tasks").textContent.includes("已回報，待驗證"));
+const absent={id:"new",modern:true,goal:"",current:"",next:"",sync:{status:"waiting"}};
+assert.equal(syncInfo(absent).label,"正在等待");
+assert.equal(syncInfo({...absent,sync:{status:"not_reported"}}).label,"工作摘要待同步");
+assert.equal(syncInfo({...absent,goal:"有目標",updated_at:"2020-01-01T00:00:00Z",sync:{status:"synced"}}).label,"最新工作待同步");
+const observed={schema_version:1,observation:{limited:true,omitted:3},projects:[{id:"observed",session_id:"11111111-1111-4111-8111-111111111111",semantic_version:2,source:"observed_public_messages",title:"公開對話",goal:"公開需求",current:"公開進度",sync:{status:"observed"},tasks:[],groups:[],agents:[],events:[]}]};
+render(config,observed);assert.equal(nodes.get("sync-state").textContent,"已讀取公開對話・待關卡同步");assert.ok(nodes.get("progress").textContent.includes("待建立"));assert.ok(nodes.get("completion-policy").textContent.includes("不會自動"));assert.equal(nodes.get("observation-notice").hidden,false);assert.ok(nodes.get("observation-notice").textContent.includes("3 個對話"));
+const css=fs.readFileSync(path.join(root,"web/styles.css"),"utf8");
+assert.match(html,/<html lang="zh-Hant">/);assert.match(css,/@media\(max-width:920px\)/);assert.match(css,/@media\(max-width:580px\)/);
+assert.match(html,/<select id="project" hidden aria-hidden="true" tabindex="-1">/);
+assert.match(html,/<h2>對話<\/h2>/);
+assert.match(html,/<details id="other-tasks" class="other-tasks" hidden>/);assert.match(html,/<h2>工作分工<\/h2>/);
+assert.match(css,/white-space:nowrap;overflow:hidden;text-overflow:ellipsis/);
+console.log("PASS: v1/v2 semantic DOM, evidence-gated milestones, zero-task unknown progress, assignment/current separation, safe text/URLs and accessible responsive structure (not a browser pixel test).");

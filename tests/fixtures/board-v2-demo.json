@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "demo": true,
+  "updated_at": null,
+  "projects": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "session_id": "11111111-1111-4111-8111-111111111111",
+      "semantic_version": 2,
+      "title": "範例：公司網站與聯絡表單",
+      "goal": "建立可讓訪客了解服務、查詢方案並寄送留言的網站，電腦與手機都能清楚操作。",
+      "current": "整理手機版的聯絡表單，核對輸入錯誤提示與鍵盤操作。",
+      "next": "完成行動裝置驗收後，準備測試環境部署。",
+      "phase": "介面與資料整合中",
+      "summary": "本頁所有名稱、關卡、成果與分工都是合成範例，不代表任何真實工作已完成。",
+      "updated_at": null,
+      "sync": {"status": "synced", "reported_at": null},
+      "completed": [
+        {"title": "需求與驗收條件已整理", "detail": "已列出首頁、服務介紹與聯絡表單的檢查項目。", "evidence": [{"label": "合成範例：需求核對清單"}]},
+        {"title": "桌面版型已完成檢查", "detail": "主要資訊階層、表單欄位與導覽位置已核對。", "evidence": [{"label": "合成範例：桌面版檢查紀錄"}]}
+      ],
+      "groups": [{"id": "delivery", "title": "交付流程"}, {"id": "interface", "title": "介面驗收"}],
+      "tasks": [
+        {"id": "requirements", "title": "確認需求與驗收條件", "group": "delivery", "status": "passed", "detail": "三個頁面的需求已逐項核對。", "evidence": [{"label": "合成範例：需求核對清單"}]},
+        {"id": "desktop", "title": "桌面版資訊與版面驗收", "group": "interface", "status": "done", "detail": "檢查內容階層與主要操作，未代替手機驗收。", "evidence": [{"label": "合成範例：桌面版檢查紀錄"}]},
+        {"id": "mobile", "title": "手機表單與鍵盤操作驗收", "group": "interface", "status": "in_progress", "detail": "正在檢查小螢幕的錯誤提示與焦點順序。", "evidence": []},
+        {"id": "integration", "title": "留言資料介面整合", "group": "delivery", "status": "source_ready", "detail": "程式已備妥，仍需整合驗收。", "evidence": [{"label": "合成範例：型別契約已備妥"}]},
+        {"id": "deployment", "title": "部署至測試環境並驗證", "group": "delivery", "status": "pending", "detail": "待前面關卡完成後再執行。", "evidence": []}
+      ],
+      "agents": [
+        {"id": "interface-owner", "session_id": null, "role": "介面實作", "assignment": "負責首頁、聯絡表單與手機版面。", "current": "調整表單標籤、錯誤提示與焦點順序。", "next": "完成手機與鍵盤操作驗收。", "status": "in_progress", "updated_at": null, "evidence": []},
+        {"id": "data-owner", "session_id": null, "role": "資料介面", "assignment": "負責留言資料格式、欄位驗證與測試介面。", "current": "型別契約已交付，等待介面整合。", "status": "source_ready", "updated_at": null, "evidence": []}
+      ],
+      "events": [
+        {"at": "2026-01-01T09:00:00Z", "kind": "semantic", "text": "需求已整理成五個驗收關卡，交付與介面檢查分開追蹤。"},
+        {"at": "2026-01-01T09:20:00Z", "kind": "semantic", "text": "桌面版檢查完成；手機表單與整合驗收仍在進行。"},
+        {"at": "2026-01-01T09:30:00Z", "kind": "semantic", "text": "資料介面已備妥，下一步由介面協作者接續整合。"}
+      ],
+      "metrics": [{"label": "規劃頁面", "value": 3, "unit": "頁"}, {"label": "表單欄位", "value": 5, "unit": "項"}],
+      "history_dropped": 0
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "session_id": "22222222-2222-4222-8222-222222222222",
+      "semantic_version": 2,
+      "title": "範例：每週庫存報表自動化",
+      "goal": "將來源表格整理為每週庫存摘要，保留可核對的輸入與輸出紀錄。",
+      "current": "等待去識別化的欄位範例，尚未開始處理實際資料。",
+      "next": "收到欄位範例後，建立可驗收的資料整理關卡。",
+      "phase": "等待輸入資料",
+      "summary": "合成範例：示範尚未建立關卡時的呈現，不顯示假百分比。",
+      "updated_at": null,
+      "sync": {"status": "waiting", "reported_at": null},
+      "completed": [], "groups": [], "tasks": [],
+      "agents": [{"id": "validation-owner", "session_id": null, "role": "資料驗證", "assignment": "核對輸入欄位、資料型別與輸出摘要。", "current": "等待欄位範例，尚未執行驗證。", "status": "blocked", "updated_at": null, "evidence": []}],
+      "events": [{"at": "2026-01-01T10:00:00Z", "kind": "semantic", "text": "已記錄資料整理目標；收到欄位範例後才會建立實際關卡。"}],
+      "metrics": [], "history_dropped": 0
+    }
+  ]
+}

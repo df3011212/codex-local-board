@@ -15,3 +15,4 @@
 .conversation strong{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;font-weight:450}
 .conversation.selected{padding-left:10px}
 @media(max-width:580px){.conversation-list,.conversation-list.filtered{display:grid;max-height:220px;margin-top:12px}.conversation{min-height:44px;padding-top:10px;padding-bottom:10px}}
+.other-tasks{border-top:1px solid var(--line);margin-top:16px;padding-top:13px;min-width:0}.other-tasks>summary{cursor:pointer;font-size:13px;color:var(--muted);min-height:36px;line-height:36px;white-space:nowrap}.other-tasks>summary .count{margin-left:4px;line-height:20px;vertical-align:middle}.other-task-note{font-size:11px;margin-top:6px}.other-tasks .conversation-list{max-height:220px}.selection-kind{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:10px 13px;margin-bottom:16px;background:#162432}

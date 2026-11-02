@@ -1,19 +1,62 @@
-Codex 繁體中文語意進度看板
+Codex Local Board｜繁體中文對話進度看板
 
-主要入口：雙擊 Open-Board.cmd，或桌面的「查看所有Codex代理.cmd」。
-主要介面：http://127.0.0.1:8787；關閉本看板請用 Close-Board.cmd。
-8083 舊任務板保留，這個入口不操作它。
+一、開啟與關閉
+請保留完整資料夾，雙擊 Open-Board.cmd。
+主要網址：http://127.0.0.1:8787/
+重複開啟會沿用本資料夾的服務；Close-Board.cmd 只關閉已核對身分的本看板。
+已有其他服務使用相同連接埠時會停止並說明，不會關閉別人的程序。
 
-本機看板會唯讀列出可確認的普通 Codex 對話與限額公開訊息；
-有模型結構化語意報告時，以較清楚的目標、目前工作、下一步與證據為準。
-公開文字來源尚無可驗證關卡時會顯示待建立，沒有假完成百分比。
-它不讀內部思考、不把工具停止當作完成、不另呼模型。
+二、如何看進度
+左欄使用 Codex 原始對話名稱，每列一行，可搜尋完整標題。
+尚未取得原生名稱的報告放在「其他同步任務」，預設收合。
+右側依序查看工作目標、目前工作、下一步、成果、驗收關卡與工作分工。
+頁面預設每五秒讀取資料，保留目前選擇與展開狀態。
+進度條是已完成且附證據的關卡比例，不是剩餘時間或模型思考。
+沒有關卡時顯示待建立；公開摘要、已回報成果及本輪重測結果會分清來源。
 
-全域語意指導的安裝／移除、相容限制與私人資料位置詳 README.md。
-指導在新任務載入；舊對話不保證熱更新，不宣稱已完整理解全部歷史。
-請保留完整資料夾。runtime/Node 與所有程式使用同資料夾相對路徑。
+三、首次整理既有聊天室
+看板開啟後，雙擊 Sync-All-Chats.cmd。
+它會使用本機已登入 Codex 的可用額度，啟動一次明確同步，整理可取得的公開摘要。
+整理結果存入私人 conversation-summaries.json；依視窗結果確認是否成功。
+工作中的 Codex 正式回報優先於整理報告，整理報告又優先於純公開文字摘要。
+這不會替其他專案重新跑測試；未重測的成果與資料來源必須明示。
+看板每五秒刷新只讀本機資料，不會每次呼叫模型。
+可先用 sync-all.mjs sync --dry-run 檢查數量，不啟動模型。
+每次最多50個尚未直接回報的對話；超限數量列在 omitted_capacity，不代表全部同步。
+預設等待180秒，可用 --timeout-seconds 指定1至600秒；失敗或逾時保留原摘要。
+私人執行紀錄在 .runtime/sync-runs；不要將這些紀錄或匯出檔上傳。
+若手動中斷留下 .runtime/sync-all.lock，先確認已無同步在跑，備份後只移除該鎖再重試。
 
-進階工具活動介面：Open-All-Agents.cmd（原官方 Agent View 外掛）。
-它仍使用原生外掛驗證，不列印私人查看授權網址。
-既有 vendor/runtime、私人 state/config、外掛 hooks/信任均保留。
-不要把執行中的 state-v2.json、state.json、config.json、.runtime 上傳公開。
+四、讓工作中的 Codex 自動同步
+在本資料夾終端機執行：
+  .\runtime\node.exe .\install-agent-guidance.mjs audit
+  .\runtime\node.exe .\install-agent-guidance.mjs install --render
+確認預覽內容後執行：
+  .\runtime\node.exe .\install-agent-guidance.mjs install --apply
+它會加入有備份、可移除的全域指導，讓載入指導的 Codex 工作回報短摘要。
+既有對話可請 Codex 依公開摘要補齊，需註明來源與未重測內容。
+安裝器不強制重啟 Codex，也不更改外掛信任；是否已載入應看實際同步狀態。
+
+查看報告範例：
+  .\runtime\node.exe .\agent_report.mjs --example
+固定命令已含 --state 時也可加 --example；不會讀寫狀態檔。
+請勿把 --example 和 --json-file、--json-stdin 等實際回報參數混用。
+來源版若沒有 runtime/node.exe，以上可改用已安裝的 Node。
+
+五、資料與版本
+主要看板：Node v2，Open-Board.cmd／Close-Board.cmd，資料 state-v2.json。
+舊版相容：Python v1，Start-Board.cmd／Stop-Board.cmd，資料 state.json。
+兩個版本使用不同結構。Node v2 不把 source_ready 計入驗收完成。
+核心報告使用 Node 18 以上；讀既有 Codex SQLite 索引建議使用內附 Node 24.22.2。
+
+六、進階事件介面
+Open-All-Agents.cmd 開啟另附的 Codex Agent View。
+它需要原生外掛安裝及信任，並可能產生短效私人查看網址；不要公開該網址。
+它的工具事件不等於主要看板的驗收成果。
+
+七、公開與授權
+不要上傳執行中的 state-v2.json、conversation-summaries.json、state.json、config.json、.runtime、私人備份或憑證。
+原創看板及翻譯補丁：LICENSE（MIT）。
+Node.js 與其元件：runtime/LICENSE。
+Codex Agent View：vendor/codex-agent-view/LICENSE 與 NOTICE（Apache-2.0）。
+完整安裝、重建可攜版、資料限制與測試命令請看 README.md。

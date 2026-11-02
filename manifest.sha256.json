@@ -1,34 +1,87 @@
 {
   "board_version": 2,
+  "distribution": "source_and_windows_portable",
   "node_version": "24.22.2",
   "agent_view_version": "0.5.6",
   "primary_entry": "Open-Board.cmd",
+  "sync_entry": "Sync-All-Chats.cmd",
   "advanced_entry": "Open-All-Agents.cmd",
   "primary_port": 8787,
-  "source_files_copied": [
+  "source_files": [
+    ".gitignore",
+    "AgentView.Common.ps1",
+    "Board.Common.ps1",
     "Close-Board.cmd",
+    "Install-AgentView.ps1",
     "LICENSE",
+    "Open-All-Agents.cmd",
+    "Open-All-Agents.ps1",
     "Open-Board.cmd",
     "README.md",
+    "Start-Board.cmd",
+    "Start-Board.ps1",
+    "Stop-Board.cmd",
+    "Stop-Board.ps1",
+    "Sync-All-Chats.cmd",
     "agent_report.mjs",
+    "agentview.zh-TW.json",
+    "agentview_zh_tw.py",
     "board-node.mjs",
+    "board.py",
     "codex-observer.mjs",
     "codex-titles.mjs",
     "config.example.json",
     "docs/agent-guidance.template.md",
     "install-agent-guidance.mjs",
+    "make_portable.py",
     "open-board.mjs",
+    "server.py",
     "state.example.json",
+    "sync-all.mjs",
+    "tests/Test-Scripts.ps1",
+    "tests/board-node.test.mjs",
+    "tests/codex-titles.test.mjs",
+    "tests/fixtures/board-v2-demo.json",
+    "tests/summary-merge.test.mjs",
+    "tests/sync-all.test.mjs",
+    "tests/test_addon.py",
+    "tests/test_board.py",
+    "tests/test_dom.js",
+    "tests/test_guidance.mjs",
+    "tests/test_launcher.mjs",
+    "tests/test_observer.mjs",
+    "tests/test_portable.py",
+    "update_state.py",
     "web/app.js",
     "web/index.html",
-    "web/styles.css"
+    "web/styles.css",
+    "使用說明.txt"
   ],
-  "protected_files_unchanged": 26,
   "files": [
+    {
+      "path": ".gitignore",
+      "size": 504,
+      "sha256": "103b756c9a4ee1328df54cc7bc3146571775c6c7ecdae4bb1f0a2931c7d8bd74"
+    },
+    {
+      "path": "AgentView.Common.ps1",
+      "size": 879,
+      "sha256": "ccd2b751fa8302b176566059f95a50af2e8b5567494c23ea0f22705922f2900f"
+    },
+    {
+      "path": "Board.Common.ps1",
+      "size": 4825,
+      "sha256": "68a5a7d02375867ad8bf99f0de1e32dba955bb963a9bebd0c40f49adfa80b70f"
+    },
     {
       "path": "Close-Board.cmd",
       "size": 253,
       "sha256": "47b609fa21abb2f04952f78c9412d32d2b23fd3dcc242804435f838f5ae99190"
+    },
+    {
+      "path": "Install-AgentView.ps1",
+      "size": 4320,
+      "sha256": "6dbf4ae130f645f00c163dd400fe08182fc5da023738fe9109b090c2e169f0dd"
     },
     {
       "path": "LICENSE",
@@ -41,24 +94,69 @@
       "sha256": "c04b6ddf723a1af986cc9dd18699d59bdaad79b1e255f601b87e108c5c3cd2cf"
     },
     {
+      "path": "Open-All-Agents.ps1",
+      "size": 822,
+      "sha256": "d438242c0d767709ba6f643dac278db045aa9bb35599016751d350e66563d7f3"
+    },
+    {
       "path": "Open-Board.cmd",
       "size": 253,
       "sha256": "38041d73b08fca355b28a9d200fdf8fbc4e4d1427c9ebd41b1fdf2fbf3f17a16"
     },
     {
       "path": "README.md",
-      "size": 20794,
-      "sha256": "457c3ba60f999f03a20c817412f040ccc60f7a004b61a957878c611d9e8c6b02"
+      "size": 26974,
+      "sha256": "b8c39b6ca4160f3b4dc3518139abba0065bfcffcdcc500942981458625425115"
+    },
+    {
+      "path": "Start-Board.cmd",
+      "size": 92,
+      "sha256": "2b778bd9f14237503e1ffba58d1fa4fbc2e807cb9f5f69ea096d80bdf48792aa"
+    },
+    {
+      "path": "Start-Board.ps1",
+      "size": 3607,
+      "sha256": "61d93dbcef30f14cf79f397784b8f320b6935b917e1fd20f3d719737c39acb74"
+    },
+    {
+      "path": "Stop-Board.cmd",
+      "size": 88,
+      "sha256": "f57c545121abcb32157a45c288d67dcd3693a76b3a166ae21cb6ca6b87f0033e"
+    },
+    {
+      "path": "Stop-Board.ps1",
+      "size": 857,
+      "sha256": "c1e4ac02a29488a4dc39d721b895bc893628fd97dfb6d32b1de291a69622c07b"
+    },
+    {
+      "path": "Sync-All-Chats.cmd",
+      "size": 514,
+      "sha256": "f8c51bfc9fa2c57e0aafe45c433f6733a2b8cb2e389c296ac5e6aa82faedc62d"
     },
     {
       "path": "agent_report.mjs",
-      "size": 6724,
-      "sha256": "6ee6f35461a6c6c2048f20507d171139cfc18b7bc26a453dc72e43d9d50534e8"
+      "size": 7029,
+      "sha256": "ad5a8f8c9fcd19f08e8b9da9eb2a6a6132237b149fe2f7c835df5e778607238f"
+    },
+    {
+      "path": "agentview.zh-TW.json",
+      "size": 9678,
+      "sha256": "4a8f6a1f70d50aef1c1ef8d487a9983c4016e8a5a52ad9f2e7cd93e9b422caa5"
+    },
+    {
+      "path": "agentview_zh_tw.py",
+      "size": 8549,
+      "sha256": "d85c20c6f83cdecdf9a189f164709955a9933fc0797eb4c7444bea173df693c8"
     },
     {
       "path": "board-node.mjs",
-      "size": 24041,
-      "sha256": "93392a376c1083a35b76036b78bfce4d68d16b2e7a1346cdd23ed7289e1b7d88"
+      "size": 25557,
+      "sha256": "e5410d204ab7d1cb053ff987ff0ebc6f92538266cb0d20fa4b6bb42f12a86430"
+    },
+    {
+      "path": "board.py",
+      "size": 7503,
+      "sha256": "96af2eb7ef5658f3d45ee8afce66f43f2eec7b61d510bc653b75e0d41727940f"
     },
     {
       "path": "codex-observer.mjs",
@@ -77,13 +175,18 @@
     },
     {
       "path": "docs/agent-guidance.template.md",
-      "size": 2319,
-      "sha256": "a850991685123c318811ce8e2520751a2ada3a1d628a0f33eef36f7e20e2496e"
+      "size": 3368,
+      "sha256": "e24e24ceb570c836559f5ba2ede4c5173e3527af6a7a8d7de84fe66ef0504c97"
     },
     {
       "path": "install-agent-guidance.mjs",
       "size": 9678,
       "sha256": "5dbbbbae5fe6dec184adeb2619c286813c887ccb47310034a23f380e55363332"
+    },
+    {
+      "path": "make_portable.py",
+      "size": 10383,
+      "sha256": "b4ee8166dba2f1e0a5fa085af96ede7376ea27f633cf66da595ec5b7a4260a7b"
     },
     {
       "path": "open-board.mjs",
@@ -92,8 +195,8 @@
     },
     {
       "path": "runtime/LICENSE",
-      "size": 160555,
-      "sha256": "ed34dd8e3f0a78dbaf00d0444ce8e285b015b765379c2e17880455f70370f8e9"
+      "size": 157609,
+      "sha256": "5888dbb9a1d2b18f2c3e6c5f6af1b39de658372b402a0577b002777f14c62ace"
     },
     {
       "path": "runtime/node.exe",
@@ -101,9 +204,89 @@
       "sha256": "1c331340fa6cac5e4294725959070a143fa0507195a78ad77eed7943f719aac9"
     },
     {
+      "path": "server.py",
+      "size": 5062,
+      "sha256": "83632ea506d5292d7a8a51ab2470fb1159de796f0e4f4529509aa600c87af34d"
+    },
+    {
       "path": "state.example.json",
       "size": 1759,
       "sha256": "fa257fb49efb78c6e1b4f05615025d2ecf4afe324858f6bc47f3dee857e017cd"
+    },
+    {
+      "path": "sync-all.mjs",
+      "size": 23298,
+      "sha256": "69d289860cede075d891b2c522dfa73eec76126063616cab78fb8b15bf284191"
+    },
+    {
+      "path": "tests/Test-Scripts.ps1",
+      "size": 5212,
+      "sha256": "affaccb1a68f8289c8f19453d796b7a46f68899f0eb3dd7cc7ffea1ede56920e"
+    },
+    {
+      "path": "tests/board-node.test.mjs",
+      "size": 23142,
+      "sha256": "b1bf76073fa911252dbe2044fa6a4daec570aecf5973f88a52f6b2f47eb481ef"
+    },
+    {
+      "path": "tests/codex-titles.test.mjs",
+      "size": 7896,
+      "sha256": "b54e8f822056771982f1a399c835dc876810908645a92b0f300229f161f6f3ae"
+    },
+    {
+      "path": "tests/fixtures/board-v2-demo.json",
+      "size": 4927,
+      "sha256": "33d74ced1d1dc68c1b9ca2cb268e939fa833f2062ca35b2e8ad7c1915ffb6a59"
+    },
+    {
+      "path": "tests/summary-merge.test.mjs",
+      "size": 5092,
+      "sha256": "2f360c6613bf78af49cd50bd319e441a13aa4d9d1592b3d6ca9927c05771b52b"
+    },
+    {
+      "path": "tests/sync-all.test.mjs",
+      "size": 18205,
+      "sha256": "b3a653ebbd2297873ba66579d99dff130535decebccb5d17c34dc269a4875d57"
+    },
+    {
+      "path": "tests/test_addon.py",
+      "size": 5263,
+      "sha256": "c1b8dcc0c132e0f82fa62192010e6b590b4ec5294f391369db0549c7a31d0362"
+    },
+    {
+      "path": "tests/test_board.py",
+      "size": 8365,
+      "sha256": "1bd4651b141ac2fec83b7b3f042d2d59f16f8de35b1b27b0d76ff2532ddbf261"
+    },
+    {
+      "path": "tests/test_dom.js",
+      "size": 12243,
+      "sha256": "f373b3163ef8e4c9d858b2791cc81e5c88210c066d6e573c93db51c3366dc04d"
+    },
+    {
+      "path": "tests/test_guidance.mjs",
+      "size": 4329,
+      "sha256": "38f074eac4b8c065ede729fe523dd5cb4b8213249f012662832c43f31159df94"
+    },
+    {
+      "path": "tests/test_launcher.mjs",
+      "size": 6213,
+      "sha256": "1f6849808540580caa1ba0cfb28017222934e647f4176ec0f53fe29f636478e7"
+    },
+    {
+      "path": "tests/test_observer.mjs",
+      "size": 12805,
+      "sha256": "4af4c577a289d0f2f5ecb510828a7e9fb9d013a24de488fe97f0290632dd72ce"
+    },
+    {
+      "path": "tests/test_portable.py",
+      "size": 5078,
+      "sha256": "8e772a251786181eb965ffdf62145cfac36e314431173ab7c6a5625659aea379"
+    },
+    {
+      "path": "update_state.py",
+      "size": 5342,
+      "sha256": "0e3b2099d5bead3a1021e6d2be925a044fde981b054d6ccaf3541ce9e82086ad"
     },
     {
       "path": "vendor/codex-agent-view/.agents/plugins/marketplace.json",
@@ -222,27 +405,23 @@
     },
     {
       "path": "web/app.js",
-      "size": 16080,
-      "sha256": "e84bfeeadf0929a8c35e918569c5f091e10ffc1f1450841bb0c362162843dc58"
+      "size": 17424,
+      "sha256": "846fcf02bfab444613f76c65ff709b81fff4546bbf4e73ee3a5118e728b74d0e"
     },
     {
       "path": "web/index.html",
-      "size": 4453,
-      "sha256": "22085fbd4b142d0e6bf7244597e3c1acf475e2f4c37874f00d0ff0e068238f67"
+      "size": 4919,
+      "sha256": "89d8d7b306962737a455631541929564548012ac9e50289bff5edcb5979851e8"
     },
     {
       "path": "web/styles.css",
-      "size": 11899,
-      "sha256": "88eb96d55fe7da258524d31918f936bffb97b656cfd208590bf211f7a85c861d"
+      "size": 12444,
+      "sha256": "1e03a215a62d1c913ead3412f4e59199be7372e10fad74c8f978fe111057962f"
     },
     {
-      "path": "\u4f7f\u7528\u8aaa\u660e.txt",
-      "size": 1231,
-      "sha256": "8772fa4141a96a25973ab8bee7d3cb1e3bd9116a566c8dc37b9f23adef4479fc"
+      "path": "使用說明.txt",
+      "size": 3862,
+      "sha256": "166a7d3d50a6930d774196c432b321afa3143abf2adab8051e900ec1bee10466"
     }
-  ],
-  "open_executed": false,
-  "global_guidance_applied_by_this_copy": false,
-  "primary_service_started": true,
-  "browser_opened_by_deployer": false
+  ]
 }

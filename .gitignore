@@ -1,3 +1,16 @@
+state.json
+state-v2.json
+state-v2.json.lock
+state-v2.json.*.tmp
+config.json
+.runtime/
+.*.lock
+.*.tmp
+__pycache__/
+*.pyc
+.venv/
+test-results/
+
 # Local runtime records, logs, and reports
 /.runtime/
 
@@ -9,3 +22,8 @@
 # State writer locks and temporary files
 /.state-v2.json.*
 /.state.json.*
+
+# Private conversation summaries
+conversation-summaries.json
+conversation-summaries.json.*
+.conversation-summaries.json.*

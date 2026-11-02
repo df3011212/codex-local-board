@@ -1,14 +1,17 @@
 # Codex Local Board｜繁體中文本機進度看板
 
-以繁體中文整理每個工作聊天室的**目標、正在做什麼、下一步、已完成成果、可驗證關卡與分工**。主要入口是 Node.js 標準函式庫的唯讀本機看板；模型依聊天室已知內容鏡像短報告，無須另呼模型分析日誌。本專案不含遊戲檔案、帳號、私人對話或特定使用者路徑。
+以繁體中文整理每個工作聊天室的**目標、目前工作、下一步、已完成成果、可驗證關卡與分工**。主要入口是 Node.js 標準函式庫的唯讀本機看板；由正在工作的 Codex 整理短報告，不必每次刷新另呼模型分析日誌。
+
+本倉庫保留原創來源、測試與 Windows 可攜入口，也保留既有 `runtime/` Node.js 及 `vendor/codex-agent-view/` 套件與完整授權。一般使用者解壓縮後直接開啟看板；不需要先裝 Python 或 npm。本專案的公開範例不含私人對話、帳號或特定使用者路徑。
 
 | 介面 | 資料從哪裡來 | 能看見什麼 |
 |---|---|---|
 | 本專案主要語意看板 | 當前 Codex 模型依指導執行 `agent_report.mjs` 鏡像事實 | 每聊天室的清楚目標／目前／下一步／成果、明確關卡進度與實際分工 |
+| 既有對話的整理報告 | Codex 讀取可取得的公開對話摘要後，明確整理並標示來源 | 已知需求、最近進展、已回報成果與後續安排；未重測的成果會註明 |
 | Python v1 相容檢查點 | 你或代理明確執行 `update_state.py` 登記 | 原有多專案檢查點；Node 看板可合併唯讀呈現 |
 | 外部 Agent View（進階備選） | 經 Codex 原生載入、授權後收到的全域 hooks | 新工作與子代理的事件、工具活動及許可狀態 |
 
-**Agent View 的事件不會自動轉成這裡的完成百分比。** 工具被呼叫、代理停止或程式碼準備好，都不等於驗收通過。兩者均不提供模型的內部思考，也不重建安裝前未觀測到的歷史。
+**Agent View 的事件不會自動轉成這裡的完成百分比。** 工具被呼叫、代理停止或程式碼準備好，都不等於驗收通過。這些介面不提供模型的內部思考；事件監視器也不會重建安裝前未觀測到的事件歷史。
 
 ## 快速啟動：主要語意看板
 
@@ -16,18 +19,60 @@
 
 1. 下載並解壓縮本專案，或使用產生的完整可攜資料夾。
 2. 雙擊 `Open-Board.cmd`。使用相對路徑的 `runtime/node.exe`，來源版才會尋找已安裝的 Node。
-3. 預設開啟 `http://127.0.0.1:8787`。自動列出可確認的既有普通對話，以本機索引及限額公開訊息整理；模型結構化報告優先。缺關卡就顯示待建立，範例永遠標示為範例。
+3. 預設開啟 `http://127.0.0.1:8787`。左側選擇對話，右側直接看目標、目前工作、下一步、成果及分工。
 4. 重複開啟會沿用本資料夾的看板；使用 `Close-Board.cmd` 關閉它，狀態保留。
+
+### 首次補齊既有聊天室
+
+開啟主要看板後，雙擊 `Sync-All-Chats.cmd`。它會明確啟動一次本機 Codex，讀取可取得的公開對話摘要，整理各聊天室的目標、目前工作、下一步、已回報成果及可核對分工，寫入私人 `conversation-summaries.json`。
+
+這個操作使用本機已登入 Codex 的可用額度；它不是免費的規則推斷，也不會在每次頁面刷新時重新呼叫模型。請依視窗中的結果確認同步是否完成；額度、登入或來源資料不可用時，應保留待同步狀態，不能當成驗收成功。
+
+只檢查可同步數量與讀取限制，不啟動模型：
+
+```powershell
+.\runtime\node.exe .\sync-all.mjs sync --dry-run
+```
+
+同步器先使用 `--codex-bin` 指定的 CLI，再查看 `CODEX_LOCAL_BOARD_CODEX_BIN` 或 PATH 上的 `codex`。找不到時會停止，不自動安裝或改動設定；可先在一般終端機確認 `codex --version`。它沿用已登入的 CLI 與既有模型設定，不跳過原生信任要求。單次執行預設最多等待 180 秒，可用 `--timeout-seconds` 指定 1–600 秒；所有目標通過格式檢查後才合併整理結果，失敗或逾時會保留原檔。
+
+一次最多整理 50 個尚未有完整直接回報的原生對話，模型輸入總量最多 512 KiB，每個對話最多 24 KiB。`--dry-run` 與完成結果會列出數量及 `omitted_capacity`；超出容量的對話仍未同步，不能因這批完成就宣稱全部聊天室已同步。
+
+每次執行的輸入、暫存整理與日誌放在 `.runtime/sync-runs/`。即使輸入經過遮蔽，仍可能包含私人工作內容，請勿公開這個資料夾或 `conversation-summaries.json`。`export --output <絕對路徑>` 只匯出可用上下文，不呼叫模型；目標必須是 `--root` 內尚不存在的新 JSON，不能位於 Codex 使用者目錄，也不能覆寫既有檔案。匯出檔應視為私人資料。
+
+同步中的第二次啟動會回報忙碌。若上次曾被手動中斷而留下 `.runtime/sync-all.lock`，先確認沒有任何同步工作仍在執行，再備份並只移除這個鎖檔後重試；不要在同步執行中移除鎖，也不要清除整個 `.runtime`。一般模型失敗或正常逾時會自行釋放鎖。
+
+看板按下列優先順序顯示同一真實對話 UUID：
+
+1. 工作中的 Codex 寫入 `state-v2.json` 的結構化回報。
+2. 這次明確同步寫入 `conversation-summaries.json` 的整理報告。
+3. 只有公開文字的唯讀觀察摘要。
+
+整理報告會保留來源及未重測註記，不代表程式替每個其他專案重新執行測試。之後讓工作中的 Codex 載入下節全域指導，便能在工作開始、里程碑及交付時持續鏡像新進度。需要重新整理既有聊天室時，再明確執行一次同步即可。
 
 可在終端機以前景方式執行（`Ctrl+C` 結束）：
 
 ```powershell
-node board-node.mjs serve --root . --state ./state-v2.json --legacy-state ./state.json --config ./config.json --port 8787 --open
+node board-node.mjs serve --root . --state ./state-v2.json --summary-state ./conversation-summaries.json --legacy-state ./state.json --config ./config.json --port 8787 --open
 ```
 
 新語意資料存放 `state-v2.json`，與 Python v1 的 `state.json` 分開；不把 v2 欄位塞入舊嚴格結構。頁面每五秒重讀，HTTP 只有固定唯讀路由，沒有網路寫入 API。
 
 對話名稱沿用 Codex 原始字樣，從本機 `CODEX_HOME/session_index.jsonl` 的最新 `thread_name` 唯讀取得；在 Codex 重新命名後，看板後續刷新會跟著更新，不自行改寫儲存中的語意報告。關閉觀察來源時也不讀這份名稱索引。
+
+左側每個對話只顯示一行原名，過長時用省略號呈現，完整名稱保留在提示文字與搜尋內容。當原生名稱索引可用、且至少有一個可對應名稱時，主清單只列出可對應 Codex 名稱的對話；尚無原生名稱的報告與測試任務收在預設折疊的「其他同步任務」，不混入主清單，也不刪除資料。沒有可用原生名稱時，仍可選擇已同步的工作報告。重新讀取資料會保留目前選擇、搜尋、焦點及折疊狀態。
+
+### 查看回報格式
+
+在專案資料夾執行：
+
+```powershell
+.\runtime\node.exe .\agent_report.mjs --state "$PWD\state-v2.json" --example
+```
+
+來源版若沒有內附 Node，將 `.\runtime\node.exe` 換成 `node`。`--example` 可單獨使用，或搭配固定報告命令中的 `--state`；兩者只輸出合成格式範例，不讀寫狀態檔，也不要求對話 UUID。不要同時加上 `--json-file`、`--json-stdin` 或其他實際回報參數。
+
+正式回報由工作中的 Codex 寫出短 UTF-8 JSON，再執行固定的共享狀態命令加上 `--json-file <檔案>`，或透過 stdin 加上 `--json-stdin`。首次根報告應補齊 `title`、`goal`、`current`、`next`、`summary`、`phase`、`groups`、`tasks`、`completed`、`agents`，同時交代已完成與尚缺內容。沒有可核對關卡或成果時使用空陣列並說明待確認；分工只列真實主代理及確實指派的子代理。完成項目的 `evidence` 必須是陣列，不接受把原始日誌當成報告。
 
 ### 讓新工作自動鏡像報告
 
@@ -52,7 +97,7 @@ node install-agent-guidance.mjs uninstall --apply
 
 `install`／`uninstall` 未加 `--apply` 只預覽。可用 `--codex-home` 指定測試用 Codex 目錄、`--board-root` 指定長期保留的本專案資料夾、`--node` 指定固定 Node 路徑；報告命令會固定共享狀態的絕對位置，避免每個工作目錄各存一份。移動看板資料夾後請重新預覽／安裝，更新指導中的位置。
 
-生效範圍是**之後載入這份全域指導的新工作**。安裝器不強制重啟、不更改 hooks／信任；已執行中的舊對話不保證熱載入。舊對話可首次明確載入指導後報告自己的已知狀態，沒有安裝前對話全量回放，也不能宣稱所有聊天室已同步。
+生效範圍是**之後載入這份全域指導的工作**。安裝器不強制重啟、不更改 hooks／信任；已執行中的舊對話不保證熱載入。需要補齊既有對話時，可請 Codex 透過可用的對話讀取工具整理公開摘要，或在該對話載入指導後回報已知狀態。整理報告必須註明來源；原對話聲稱已完成的成果，不能冒稱已在本輪重新測試。
 
 根工作使用真實 `CODEX_THREAD_ID` UUID；缺少就等待明確 ID，不隨機冒充聊天室。spawn 子代理時要在任務訊息帶父工作 UUID、穩定分工 ID 與角色；子代理只更新該分工，不覆寫父目標或關卡。工具停止不等於交付完成，沒有已定義關卡不顯示假百分比；費用／Token／工時未知就不填。開始多步工作、有意義的里程碑和最終交付各更新一次即可，不用每次工具呼叫都製造事件。
 
@@ -75,12 +120,14 @@ node install-agent-guidance.mjs uninstall --apply
 
 ## Python v1 檢查點相容方式
 
-本機看板需要 Python **3.10 以上**；不用 pip、Node.js、資料庫或前端建置工具。Windows 腳本支援 Windows PowerShell 5.1，腳本使用 ASCII，避免系統編碼差異。
+只有這個舊版相容入口需要 Python **3.10 以上**；主要 Node 看板不需要 Python。此入口不用 pip、Node.js 或自建資料庫，Windows 腳本支援 Windows PowerShell 5.1。
 
 1. 下載並解壓縮本專案到你自己的資料夾。
 2. Windows 雙擊 `Start-Board.cmd`。
 3. 預設瀏覽器開啟 `http://127.0.0.1:8787`。初次啟動只建立缺少的 `state.json`、`config.json`；不覆寫既有內容。
 4. 使用 `Stop-Board.cmd` 關閉本資料夾啟動的看板。狀態檔保留。
+
+兩個入口預設都使用 8787，不要同時占用同一連接埠。測試舊版時可使用另一份資料夾與下方 8788 範例；避免把舊版自訂設定套到主要 Node 看板。
 
 指定其他連接埠或不開瀏覽器：
 
@@ -100,7 +147,7 @@ python server.py --port 8787
 
 Start／Stop 只管理本資料夾的程序，核對 PID、啟動時間、Python 執行檔和完整命令列參數。重複啟動會沿用同一程序；遇到其他服務占用連接埠會失敗，不會關掉別人的程序。Windows 使用排他 socket，避免不同程序共用相同連接埠。
 
-## 登記真實檢查點
+## Python v1：登記真實檢查點
 
 範例一開始全部為待完成，會顯示「範例資料」。真正更新後移除此標記。以下範例需由你核對事實後執行；指令本身不會替你做驗收。
 
@@ -130,9 +177,9 @@ python server.py --state other-state.json --config other-config.json --port 8788
 
 ## 進度與介面設定
 
-`config.json` 可調標題、副標、輪詢秒數、完成狀態，以及分工／事件區是否顯示；預設每 **5 秒**重讀資料，範圍為 1–60 秒。各專案的 `groups` 決定交付、介面或其他群組，可直接在 `state.json` 調整後使用 `server.py --check` 驗證。
+`config.json` 可調標題、副標、輪詢秒數，以及分工／事件區是否顯示；預設每 **5 秒**重讀資料，範圍為 1–60 秒。Node v2 工作回報位於 `state-v2.json`，一次性整理位於 `conversation-summaries.json`，Python v1 相容資料才位於 `state.json`，不要混用結構。`server.py --check` 只檢查 Python v1 資料，不是 Node v2 的驗證命令。
 
-預設只有 `done`、`passed`、`frozen` 計入完成。`source_ready`、`in_progress`、`blocked` 不計入。若你的關卡本來就是「完成源碼準備」，可明確把 `source_ready` 加入 `complete_statuses`；頁面會展示目前採用的規則。
+新版只將 `done`、`passed`、`frozen` 且附有證據的關卡計入完成。`source_ready`、`in_progress`、`blocked` 都不計入。Python v1 的資料設定層雖可接受其他完成狀態，不能將它的設定直接套到 Node v2；新版會拒絕把 `source_ready` 加入 `complete_statuses`。
 
 比例為 **完成關卡數 ÷ 全部關卡數**，各關等重，向下取整；199／200 仍是 99%，全部完成才顯示 100%。無關卡時顯示「尚無關卡」。這不是工時估算、工作量加權或交付時間預測。
 
@@ -140,7 +187,7 @@ python server.py --state other-state.json --config other-config.json --port 8788
 
 ## 選配：全域代理事件監看
 
-上游 [Codex Agent View](https://github.com/JunhoYoon95/codex-agent-view) 是獨立的 Apache-2.0 專案。本專案只提供安裝與開啟包裝腳本、繁中 UI 補丁；**沒有捆綁或重新授權它的完整原始碼**。
+上游 [Codex Agent View](https://github.com/JunhoYoon95/codex-agent-view) 是獨立的 Apache-2.0 專案。本倉庫既有的 `vendor/codex-agent-view/` 保留完整套件、`LICENSE` 與 `NOTICE`，其中兩個公開 UI 檔套用本專案繁中補丁；它的授權維持獨立，不改為本專案的 MIT。主要語意看板不依賴此進階事件介面。
 
 需求為 Node.js **18 以上**、npm，以及支援 plugins／hooks 且可在終端機呼叫的 Codex CLI。只有使用本機檢查點看板時，不需要這些額外工具。
 
@@ -190,7 +237,7 @@ python make_portable.py --output "$HOME\Desktop\Codex-Local-Board-Launcher"
 
 需要 Python 3.10 以上及網路，產生器本身不需要已安裝 Node。預設只下載官方 Node.js **24.22.2 Windows x64 ZIP**，核對固定 SHA-256，搭配本專案的語意看板、reporter、指導安裝器與繁中網頁，建立全新資料夾；既有資料夾會拒絕覆寫。
 
-新資料夾包含 `runtime/node.exe`、Node 完整 `LICENSE`、本專案 MIT 來源、範例與逐檔雜湊。**GitHub 來源不包含下載的執行檔或上游完整原始碼**。
+新資料夾包含 `runtime/node.exe`、Node 完整 `LICENSE`、本專案 MIT 來源、繁中使用說明、範例與逐檔雜湊。本倉庫已保留一份既有 Windows 可攜內容；產生器提供從固定官方來源重建新資料夾的方式，不會複製執行中的私人狀態。
 
 雙擊新資料夾內 `Open-Board.cmd`，直接使用相對路徑的 Node 開啟主要語意看板；`Close-Board.cmd` 只關閉已核對健康身分、PID、根目錄指紋與執行個體 ID 的本資料夾服務，不會根據任意 PID 檔關閉其他服務。請保留整個資料夾；產生器不自動改動桌面其他捷徑。
 
@@ -231,9 +278,9 @@ python agentview_zh_tw.py --apply
 
 伺服器只綁定 `127.0.0.1`，僅接受符合實際連接埠的 localhost／127.0.0.1 Host；只開放固定 GET 路由。沒有網路寫入 API、目錄瀏覽或任意檔案下載，其他方法拒絕。這不是公開網站伺服器；同一台電腦上的其他程序仍可能讀取本機資料，所以請勿在檢查點放密碼或機密。
 
-Node v2 語意狀態最多 8 MiB、500 個聊天室；單次報告最多 64 KiB，每聊天室最多 200 個關卡／32 個分工／30 筆事件／12 個群組，證據及文字另有限長。Python v1 相容狀態最多 256 KiB、20 個專案，每專案 200 個關卡／32 個分工／30 筆事件。過大、非法 JSON 或結構不符時拒絕，不偷偷截斷關卡；各聊天室事件只保留最近三十筆。
+Node v2 每份語意狀態最多 8 MiB、500 個聊天室；單次報告最多 64 KiB，每聊天室最多 200 個關卡／32 個分工／30 筆事件／12 個群組，證據及文字另有限長。一次性整理另有上述 50 對話與輸入容量限制。Python v1 相容狀態最多 256 KiB、20 個專案，每專案 200 個關卡／32 個分工／30 筆事件。過大、非法 JSON 或結構不符時拒絕，不偷偷截斷關卡；各聊天室事件只保留最近三十筆。
 
-`.gitignore` 排除執行中的 `state-v2.json`、`state.json`、`config.json`、`.runtime`、鎖檔及測試暫存。公開範例不含任何實際工作資料；請自行檢查要提交的其他檔案。
+`.gitignore` 排除執行中的 `state-v2.json`、`conversation-summaries.json`、`state.json`、`config.json`、`.runtime`、鎖檔及測試暫存。公開範例不含任何實際工作資料；請自行檢查要提交的其他檔案。
 
 ## 驗證
 
@@ -244,7 +291,10 @@ node tests/test_dom.js
 node tests/test_guidance.mjs
 node tests/test_launcher.mjs
 node --test tests/board-node.test.mjs
-node tests/test_observer.mjs
+node --test tests/codex-titles.test.mjs
+node --test tests/test_observer.mjs
+node --test tests/summary-merge.test.mjs
+node --test tests/sync-all.test.mjs
 ```
 
 Windows PowerShell 5.1 的解析及真實程序啟停測試：
@@ -261,4 +311,4 @@ DOM 測試不是瀏覽器像素驗收；安裝腳本的靜態檢查也不等於�
 
 ## 授權
 
-本專案原創看板、腳本與翻譯補丁採 [MIT](LICENSE)。獨立依賴 Codex Agent View 由其作者提供，採 [Apache-2.0](https://github.com/JunhoYoon95/codex-agent-view/blob/main/LICENSE)。本專案不是 OpenAI 或 Agent View 上游官方發行版本。
+本專案原創看板、腳本與翻譯補丁採 [MIT](LICENSE)。內附 Node.js 的完整授權位於 [`runtime/LICENSE`](runtime/LICENSE)，包含其使用的第三方元件條款。獨立依賴 Codex Agent View 由其作者提供，採 [Apache-2.0](vendor/codex-agent-view/LICENSE)，並保留 [`NOTICE`](vendor/codex-agent-view/NOTICE)。本專案不是 OpenAI、Node.js 或 Agent View 上游官方發行版本。

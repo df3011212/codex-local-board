@@ -52,7 +52,10 @@ export async function report({statePath,sessionId,parentSessionId,agentId,role,p
 async function stdinJSON(){const chunks=[];let bytes=0;for await(const chunk of process.stdin){bytes+=chunk.length;if(bytes>LIMITS.payloadBytes)throw Error('Short report exceeds64KiB');chunks.push(chunk);}return parseShortJSON(Buffer.concat(chunks).toString('utf8'));}
 export async function main(argv=process.argv.slice(2),environment=process.env){
  const a=argumentsFor(argv,['--state','--json-file','--json-stdin','--session-id','--parent-session-id','--agent-id','--role','--example'],['--json-stdin','--example']);
- if(a['--example']){if(Object.keys(a).length!==1)throw Error('Example does not accept reporting options');console.log(JSON.stringify(EXAMPLE,null,2));return;}
+ // The installed guidance includes --state in its fixed command. Example
+ // mode accepts that option for composition only: never resolve, validate,
+ // read or create the state target, and never require a session identity.
+ if(a['--example']){if(Object.keys(a).some(key=>key!=='--example'&&key!=='--state'))throw Error('Example accepts only --example and optional --state; reporting options are not allowed');console.log(JSON.stringify(EXAMPLE,null,2));return;}
  if(Boolean(a['--json-file'])===Boolean(a['--json-stdin']))throw Error('Choose exactly one --json-file or --json-stdin');
  const sessionId=uuid(a['--session-id']??environment.CODEX_THREAD_ID);
  const parentSessionId=a['--parent-session-id']??environment.CODEX_LOCAL_BOARD_PARENT_ID;
