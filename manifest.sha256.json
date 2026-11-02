@@ -228,8 +228,8 @@
     },
     {
       "path": "docs/demo/plan-handoff.js",
-      "size": 8287,
-      "sha256": "d20a18e21d822110d7b0dfca8e8187a9308102fcd04404cfa923435ba2edc9e5"
+      "size": 8546,
+      "sha256": "ce007505d20926695ece8e6f8f4b9c9e2b80ac824b000a647b4dac8eca6e814a"
     },
     {
       "path": "docs/demo/state.json",
@@ -328,8 +328,8 @@
     },
     {
       "path": "tests/plan-handoff.test.mjs",
-      "size": 5534,
-      "sha256": "e62a619d084c986a6bd4e17688c43b738778a8840054778a5fefa93e2dec12fa"
+      "size": 5832,
+      "sha256": "728d4b0fd9e77432860a6801ef96d9edc2d1db4f6dc42891559856cd6826e364"
     },
     {
       "path": "tests/plan-integration.test.mjs",
@@ -518,8 +518,8 @@
     },
     {
       "path": "web/plan-handoff.js",
-      "size": 8287,
-      "sha256": "d20a18e21d822110d7b0dfca8e8187a9308102fcd04404cfa923435ba2edc9e5"
+      "size": 8546,
+      "sha256": "ce007505d20926695ece8e6f8f4b9c9e2b80ac824b000a647b4dac8eca6e814a"
     },
     {
       "path": "web/styles.css",
