@@ -6,6 +6,29 @@ Codex Local Board｜繁體中文對話進度看板
 重複開啟會沿用本資料夾的服務；Close-Board.cmd 只關閉已核對身分的本看板。
 已有其他服務使用相同連接埠時會停止並說明，不會關閉別人的程序。
 
+手機私人連線（選用）
+電腦與手機都安裝 Tailscale，登入同一帳號所屬的私人網路並保持連線。
+電腦要開機、保持喚醒，而且看板要持續運行；同 Wi-Fi 或外出行動網路都可使用。
+只限 tailnet 存取規則允許的裝置／成員，範圍可能包含其他成員；本工具不代改ACL。
+1. 先雙擊 Open-Board.cmd，確認電腦看板正常。
+2. 再雙擊 Open-Phone-Board.cmd。
+3. 尚未登入或 HTTPS 未設定時，由你本人依 Tailscale 原生視窗完成；本專案不代按授權。
+   HTTPS 憑證會公開記錄裝置與 tailnet DNS 名稱，核准前可先檢查名稱。
+4. 手機連上 Tailscale 後，在瀏覽器開啟成功視窗顯示的私人 HTTPS 網址，預設使用8443埠。
+   手機不能使用電腦的 http://127.0.0.1:8787/ 作為連線網址。
+Check-Phone-Board.cmd 只查看狀態，不改設定。
+Close-Phone-Board.cmd 只停用本工具持有的手機入口，不關閉本機看板。
+重開機後先開本機看板，再開Open-Phone-Board.cmd恢復橋接；Serve設定保留不代表主程式仍在運行。
+電腦端檢查成功後，仍需由你在手機實際開啟網址確認連線。
+停用時若Tailscale離線，只關閉可驗證的本工具橋接並保留記錄；恢復連線後再執行Close-Phone-Board.cmd完成Serve清理。
+主看板仍是127.0.0.1:8787，私人橋接是127.0.0.1:8788，僅提供固定唯讀看板路由。
+不提供手機控制Codex、寫入或啟動同步；不啟用Funnel、不修改防火牆、不清除其他Serve設定。
+預設連接埠被占用時會停止，不關閉別人的服務。
+手機查看和一般刷新不呼叫AI、不另用模型額度；Sync-All-Chats仍須在電腦明確執行且可能用額度。
+GitHub Pages只是公開示範，不是你的私人看板入口；私人網址與.runtime資料請勿上傳。
+官方安裝：https://tailscale.com/docs/install/windows
+官方私人Serve：https://tailscale.com/docs/features/tailscale-serve
+
 二、如何看進度
 左欄使用 Codex 原始對話名稱，每列一行，可搜尋完整標題。
 尚未取得原生名稱的報告放在「其他同步任務」，預設收合。

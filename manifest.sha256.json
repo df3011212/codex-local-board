@@ -11,12 +11,15 @@
     ".gitignore",
     "AgentView.Common.ps1",
     "Board.Common.ps1",
+    "Check-Phone-Board.cmd",
     "Close-Board.cmd",
+    "Close-Phone-Board.cmd",
     "Install-AgentView.ps1",
     "LICENSE",
     "Open-All-Agents.cmd",
     "Open-All-Agents.ps1",
     "Open-Board.cmd",
+    "Open-Phone-Board.cmd",
     "README.md",
     "Start-Board.cmd",
     "Start-Board.ps1",
@@ -46,6 +49,7 @@
     "make_portable.py",
     "open-board.mjs",
     "plan_report.mjs",
+    "private-access.mjs",
     "project-plan.mjs",
     "server.py",
     "state.example.json",
@@ -58,6 +62,7 @@
     "tests/fixtures/board-v2-demo.json",
     "tests/plan-handoff.test.mjs",
     "tests/plan-integration.test.mjs",
+    "tests/private-access.test.mjs",
     "tests/project-plan.test.mjs",
     "tests/summary-merge.test.mjs",
     "tests/sync-all.test.mjs",
@@ -92,9 +97,19 @@
       "sha256": "68a5a7d02375867ad8bf99f0de1e32dba955bb963a9bebd0c40f49adfa80b70f"
     },
     {
+      "path": "Check-Phone-Board.cmd",
+      "size": 238,
+      "sha256": "5bf0c38c162ac5f804043d91a5373e15009925c2d8dffa2ac0c90ea199d2ae6e"
+    },
+    {
       "path": "Close-Board.cmd",
       "size": 253,
       "sha256": "47b609fa21abb2f04952f78c9412d32d2b23fd3dcc242804435f838f5ae99190"
+    },
+    {
+      "path": "Close-Phone-Board.cmd",
+      "size": 240,
+      "sha256": "3bab47b98268444d0434e12e169b796b7bf3539095232ee11ccf370eafb4da0c"
     },
     {
       "path": "Install-AgentView.ps1",
@@ -122,9 +137,14 @@
       "sha256": "38041d73b08fca355b28a9d200fdf8fbc4e4d1427c9ebd41b1fdf2fbf3f17a16"
     },
     {
+      "path": "Open-Phone-Board.cmd",
+      "size": 238,
+      "sha256": "ffe5800bf649fec0ac9782261d999b7ac5a97b265db76325d638b7ee1f84b052"
+    },
+    {
       "path": "README.md",
-      "size": 35210,
-      "sha256": "83796cb40e2ef36caae487076990686eed9be262ac5c0e6535c3e3e521892360"
+      "size": 39177,
+      "sha256": "d96a46391e35d4d9957799430df616855efbf0946b199b6f9489287e83f6f35b"
     },
     {
       "path": "Start-Board.cmd",
@@ -243,8 +263,8 @@
     },
     {
       "path": "docs/index.html",
-      "size": 2538407,
-      "sha256": "ac04602a164a06d3fe2a11cb244dd8569cb6cfce10da23be676c1fd578a50a19"
+      "size": 2539111,
+      "sha256": "18713fb73333f3adc74e7b979ef5b0f8836edd0a9aa79428fae550da28e41480"
     },
     {
       "path": "install-agent-guidance.mjs",
@@ -253,8 +273,8 @@
     },
     {
       "path": "make_portable.py",
-      "size": 10468,
-      "sha256": "8d9a2de69655d3fc7794c3251f2539c07897bec74280ccde3fb5ade4dbf749f8"
+      "size": 10568,
+      "sha256": "dae69c558218259758e893b346c8ebf5045e53e31b0db4f716a23ec8c6d1f609"
     },
     {
       "path": "open-board.mjs",
@@ -265,6 +285,11 @@
       "path": "plan_report.mjs",
       "size": 2662,
       "sha256": "892d18256b22977ff27b08171abcebd4fef374e526e27881e5dbb309bd6e6c82"
+    },
+    {
+      "path": "private-access.mjs",
+      "size": 24497,
+      "sha256": "cc9e40b97ff565f43e911b430b5876c3084e856e8efe518e198551000ba6d6b2"
     },
     {
       "path": "project-plan.mjs",
@@ -337,6 +362,11 @@
       "sha256": "cd9ef0062375e1f151a051cc9f699a907c3dd8650b6a7a72c85b57f9a09c3bdc"
     },
     {
+      "path": "tests/private-access.test.mjs",
+      "size": 17296,
+      "sha256": "6782b4df8e99ab2b3ee111a574b4f7621d3ce56bc7f302642927426a85db4c48"
+    },
+    {
       "path": "tests/project-plan.test.mjs",
       "size": 15320,
       "sha256": "ccd1b2ddd72de137a3d906976c1cdf432b1b280093d9f74ceabea3a4d8eac0f2"
@@ -383,8 +413,8 @@
     },
     {
       "path": "tests/test_portable.py",
-      "size": 5380,
-      "sha256": "aac474bc6b782878502970eeca3a756a37a71c3849d5780d5c0702e2f258502a"
+      "size": 5676,
+      "sha256": "3625764164857a62d0340851c5a3546747b8459d4095e220ce1fba03d6d8a054"
     },
     {
       "path": "update_state.py",
@@ -528,8 +558,13 @@
     },
     {
       "path": "使用說明.txt",
-      "size": 5380,
-      "sha256": "7cf79c1e30564de3d84d849a48c005abec9125c23849c9e97103dbf54bc01fca"
+      "size": 7384,
+      "sha256": "1c8b7bb62946297a22f2b93d36f6266d68957f39b435d59aee1ceeda0001eddd"
     }
-  ]
+  ],
+  "private_mobile_entry": "Open-Phone-Board.cmd",
+  "private_mobile_status": "Check-Phone-Board.cmd",
+  "private_mobile_close": "Close-Phone-Board.cmd",
+  "private_mobile_https_port": 8443,
+  "private_mobile_transport": "Tailscale Serve (tailnet-only)"
 }

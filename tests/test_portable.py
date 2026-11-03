@@ -79,6 +79,9 @@ class PortableTests(unittest.TestCase):
             self.assertFalse((output / "runtime.json").exists())
             self.assertEqual(len(manifest["files"]), 27 + len(portable.BOARD_FILES))
             self.assertTrue((output / "Open-Board.cmd").is_file())
+            for filename in ("private-access.mjs", "Open-Phone-Board.cmd", "Close-Phone-Board.cmd", "Check-Phone-Board.cmd"):
+                self.assertIn(filename, portable.BOARD_FILES)
+                self.assertEqual((output / filename).read_bytes(), (portable.HERE / filename).read_bytes())
             self.assertTrue((output / "agent_report.mjs").is_file())
             self.assertIn("web/plan-handoff.js", portable.BOARD_FILES)
             self.assertEqual((output / "web/plan-handoff.js").read_bytes(),

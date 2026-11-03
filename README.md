@@ -26,6 +26,35 @@
 3. 預設開啟 `http://127.0.0.1:8787`。左側選擇對話，右側直接看目標、目前工作、下一步、成果及分工。
 4. 重複開啟會沿用本資料夾的看板；使用 `Close-Board.cmd` 關閉它，狀態保留。
 
+<a id="phone-private-access"></a>
+
+### 手機查看：Tailscale 私人 HTTPS 入口
+
+手機可在同一個 Wi-Fi 或外出使用行動網路查看電腦上的看板。電腦與手機都要安裝 [Tailscale](https://tailscale.com/download)，登入同一帳號所屬的私人網路（tailnet），並保持 Tailscale 連線；電腦必須開機、保持喚醒，且本機看板持續運行。入口只限 tailnet 存取規則允許的裝置／成員，範圍可能包含其他成員；請使用自己的私人 tailnet。本工具不代改存取規則（ACL）。
+
+1. 在 Windows 安裝 Tailscale，依原生視窗完成系統權限與帳號登入；在手機安裝 Tailscale 並登入相同帳號。本專案不代替你登入或接受授權。
+2. 在電腦雙擊 `Open-Board.cmd`，先確認本機看板正常。
+3. 雙擊 `Open-Phone-Board.cmd`。若尚未登入或尚未啟用 HTTPS，依顯示的指引，由你本人完成 Tailscale 的原生設定與同意，再重開此入口。HTTPS 憑證會將裝置名稱與 tailnet DNS 名稱記錄於公開憑證紀錄，核准前可先檢查名稱。
+4. 啟用成功後，在已連上 Tailscale 的手機瀏覽器輸入視窗顯示的私人 HTTPS 網址（預設連接埠 `8443`）。電腦上的 `127.0.0.1:8787` 不能直接當作手機網址。
+
+| Windows 入口 | 功能 |
+|---|---|
+| `Open-Phone-Board.cmd` | 檢查本機看板，啟用本工具專用的私人 HTTPS 入口 |
+| `Check-Phone-Board.cmd` | 查看本機看板、私人橋接與 Tailscale 狀態；不改連線設定 |
+| `Close-Phone-Board.cmd` | 停用本工具持有的手機入口；本機看板繼續運行 |
+
+重開機後，先開啟本機看板，再雙擊 `Open-Phone-Board.cmd` 恢復本機橋接。Tailscale 的背景 Serve 設定可能仍在，但電腦、主看板或橋接未運行時，手機仍無法取得資料。安裝與電腦端檢查成功後，仍需由你在手機實際開啟網址確認連線。
+
+停用時若 Tailscale 離線或無法查核，只會關閉可驗證為本工具持有的本機橋接，保留記錄並提示尚未完成。恢復 Tailscale 連線後，再執行一次 `Close-Phone-Board.cmd` 完成 Serve 清理，不會清除其他服務。
+
+本機主服務仍只監聽 `127.0.0.1:8787`；手機入口透過 Tailscale Serve 轉送至本工具的 `127.0.0.1:8788` 唯讀橋接。只提供固定看板讀取路由，不提供寫入、控制 Codex、啟動同步或進階 Agent View 的授權入口。不啟用公開的 Funnel，不修改防火牆，也不清除其他 Serve 設定；預設專用連接埠已被占用時會停止並說明。
+
+手機開啟與一般刷新不另外呼叫 AI、不使用模型額度；它顯示電腦已取得的資料。需要補齊舊聊天室時，仍由電腦明確執行下節的 `Sync-All-Chats.cmd`，該操作可能使用 Codex 額度。私人網址、`.runtime/` 與執行中的狀態檔不要貼到 GitHub。**GitHub Pages 是公開示範，並不是你自己的私人看板入口。**
+
+來源版可用 Node.js 18 以上執行 `node private-access.mjs status --root .`；可攜版使用內附 Node。進階連接埠可由 CLI 的 `--board-port`、`--bridge-port`、`--https-port` 指定；查詢、啟用與停用必須使用同一組設定。已安裝的 Tailscale 找不到時，可用 `--tailscale-bin` 指定既有 `tailscale.exe` 的絕對路徑；此入口不自行安裝 Tailscale。
+
+官方參考：[Windows 安裝與登入](https://tailscale.com/docs/install/windows)、[私人 Serve](https://tailscale.com/docs/features/tailscale-serve)、[HTTPS 與憑證名稱](https://tailscale.com/docs/how-to/set-up-https-certificates)。
+
 ### 首次補齊既有聊天室
 
 開啟主要看板後，雙擊 `Sync-All-Chats.cmd`。它會明確啟動一次本機 Codex，讀取可取得的公開對話摘要，整理各聊天室的目標、目前工作、下一步、已回報成果及可核對分工，寫入私人 `conversation-summaries.json`。
@@ -355,6 +384,7 @@ node --test tests/plan-integration.test.mjs
 node --test tests/test_observer.mjs
 node --test tests/summary-merge.test.mjs
 node --test tests/sync-all.test.mjs
+node --test tests/private-access.test.mjs
 ```
 
 Windows PowerShell 5.1 的解析及真實程序啟停測試：
@@ -366,6 +396,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\Test-Scripts.ps1 -
 測試涵蓋固定 HTTP 路徑、Host、HTTP 方法、大小與結構限制、失敗不覆寫、並行更新不遺失、事件上限、初始化保留、百分比、雙專案 DOM、安全文字與響應式版面結構，以及含空格路徑、重複啟動、假 PID／其他服務拒絕及正確關閉。繁中補丁以自製合成介面結構測試版本拒絕、插值鍵、預覽及重複套用，不攜帶上游完整 JS。
 
 可攜入口測試使用自製 archive，核對雜湊失敗、下載跳轉拒絕、tar 路徑穿越／連結拒絕、精確檔名、相對入口、授權檔保留與既有輸出不覆寫；不會替測試安裝外掛或打開瀏覽器。
+
+私人手機入口測試使用合成 Tailscale 設定與本機測試服務，核對固定唯讀路由、Host／Origin、Funnel 拒絕、上游實例綁定與保留其他 Serve 設定。這些測試不代替手機的實際 Tailscale 登入與 HTTPS 連線驗收。
 
 DOM 測試不是瀏覽器像素驗收；安裝腳本的靜態檢查也不等於所有機器上的 hooks 已實際運作。
 
