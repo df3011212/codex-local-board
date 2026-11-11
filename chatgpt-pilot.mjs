@@ -5,9 +5,12 @@ import {ROOT, argumentsFor, keys, list, lockedJsonUpdate, parseShortJSON, readJS
 import {PLAN_LIMITS, presentPlan, readProjectPlans, writeProjectPlan} from './project-plan.mjs';
 
 const REQUEST_BYTES = 16384;
+const HTTP_DRAIN_OVERRUN_BYTES = 64 * 1024;
 const IMPORT_BYTES = 12 * 1024 * 1024;
 const STORE_BYTES = 24 * 1024 * 1024;
 const MAX_CARDS = 10000;
+const ORGANIZER_BYTES = 2 * 1024 * 1024;
+const MAX_ORGANIZERS = 10000;
 const DEFAULT_STORE = path.join(ROOT, '.runtime', 'chatgpt-pilot.json');
 const STATUSES = new Set(['not_started', 'in_progress', 'done', 'paused']);
 const CHAT_FIELDS = ['id', 'title', 'archived'];
@@ -102,22 +105,33 @@ export async function importChatgptIndex(filename, value) {
   };
 }
 
-async function readJSONStream(stream, limit) {
+async function readJSONStream(stream, limit, {drainOverrunBytes = 0, discard = false} = {}) {
   const chunks = [];
   let size = 0;
   for await (const chunk of stream.iterator({destroyOnReturn: false})) {
     size += chunk.length;
-    if (size > limit) throw Error('Request is too large');
+    if (size > limit + drainOverrunBytes) throw Error('Request is too large');
+    if (size > limit && !discard) {
+      discard = true;
+      chunks.length = 0;
+    }
+    if (discard) continue;
     chunks.push(chunk);
   }
+  if (discard) throw Error('Request is too large');
   return parseShortJSON(new TextDecoder('utf-8', {fatal: true}).decode(Buffer.concat(chunks)));
 }
 
 async function readRequestJSON(req, limit) {
   const type = req.headers['content-type'] ?? '';
   if (!/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(type)) throw Error('JSON content type is required');
-  if (Number(req.headers['content-length']) > limit) throw Error('Request is too large');
-  return readJSONStream(req, limit);
+  const declaredSize = Number(req.headers['content-length']);
+  if (declaredSize > limit + HTTP_DRAIN_OVERRUN_BYTES) throw Error('Request is too large');
+  // A small overrun is drained without retaining its data so Windows can deliver the 400.
+  return readJSONStream(req, limit, {
+    drainOverrunBytes: HTTP_DRAIN_OVERRUN_BYTES,
+    discard: declaredSize > limit,
+  });
 }
 
 function expectedTimestamp(value) {
@@ -153,6 +167,87 @@ function requestError(req, localOrigin, resource) {
     return errorResponse(403, '請從本機看板儲存' + resource + '。');
   }
   return null;
+}
+
+const organizerFields = ['id', 'codex_thread_id'];
+
+function organizerPair(value) {
+  const id = uuid(value.id);
+  const codex_thread_id = uuid(value.codex_thread_id);
+  if (id === codex_thread_id) throw Error('Organizer and source must be separate conversations');
+  return {id, codex_thread_id};
+}
+
+function validateOrganizers(value) {
+  keys(value, ['registrations'], ['registrations']);
+  const storedFields = [...organizerFields, 'registered_at'];
+  const threadIds = new Set();
+  const registrations = list(value.registrations, MAX_ORGANIZERS).map(row => {
+    keys(row, storedFields, storedFields);
+    const pair = organizerPair(row);
+    if (threadIds.has(pair.codex_thread_id)) throw Error('Duplicate Codex organizer ID');
+    threadIds.add(pair.codex_thread_id);
+    return {...pair, registered_at: timestamp(row.registered_at)};
+  });
+  return {registrations};
+}
+
+async function readOrganizers(filename) {
+  try {
+    const stat = await fs.lstat(filename);
+    if (!stat.isFile() || stat.isSymbolicLink() || path.relative(filename, await fs.realpath(filename))) {
+      throw Error('Untrusted organizer storage file');
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  return validateOrganizers(await readJSON(filename, ORGANIZER_BYTES, {registrations: []}));
+}
+
+export async function readChatgptOrganizerIds(filename) {
+  const {registrations} = await readOrganizers(filename);
+  return new Set(registrations.map(row => row.codex_thread_id));
+}
+
+class AlreadyRegistered extends Error {}
+class OrganizerCapacity extends Error {}
+
+export async function handleChatgptOrganizer(req, index, filename, localOrigin) {
+  if (req.method !== 'PUT') return errorResponse(405, '只接受登記整理對話。', 'PUT');
+  const error = requestError(req, localOrigin, '整理對話');
+  if (error) return error;
+
+  let pair;
+  try {
+    const payload = await readRequestJSON(req, 1024);
+    keys(payload, organizerFields, organizerFields);
+    pair = organizerPair(payload);
+  } catch {
+    return errorResponse(400, '請提供不同的 ChatGPT 原對話與 Codex 整理對話識別碼。');
+  }
+  const {chats} = await readStore(index);
+  if (!chats.some(chat => chat.id === pair.id)) return errorResponse(404, '找不到這則已匯入的對話。');
+
+  try {
+    await lockedJsonUpdate(filename, current => {
+      const found = current.registrations.find(row => row.codex_thread_id === pair.codex_thread_id);
+      if (found?.id === pair.id) throw new AlreadyRegistered();
+      if (found) throw new UpdateConflict();
+      if (current.registrations.length >= MAX_ORGANIZERS) throw new OrganizerCapacity();
+      return {registrations: [...current.registrations, {...pair, registered_at: new Date().toISOString()}]};
+    }, {
+      timeoutMs: 3500,
+      read: readOrganizers,
+      validate: validateOrganizers,
+      maxBytes: ORGANIZER_BYTES,
+      tooLarge: 'ChatGPT organizer file exceeds its local size limit',
+    });
+  } catch (failure) {
+    if (failure instanceof UpdateConflict) return errorResponse(409, '這則 Codex 對話已登記為另一則 ChatGPT 對話的整理工作。');
+    if (failure instanceof OrganizerCapacity) return errorResponse(409, '整理對話的登記已達上限。');
+    if (!(failure instanceof AlreadyRegistered)) throw failure;
+  }
+  return {status: 200, body: {registered: true}};
 }
 
 export async function handleChatgptPilot(req, filename, localOrigin) {

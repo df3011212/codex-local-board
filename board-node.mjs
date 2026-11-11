@@ -106,47 +106,66 @@ function observedProject(p){
  for(const name of ['tasks','groups','completed','agents','events','metrics'])if(p[name]!==undefined&&(!Array.isArray(p[name])||p[name].length))throw Error('Observations must not infer milestones or agent assignments');
  return {...emptyProject(p.id),title:text(p.title,120),goal:text(p.goal??''),current:text(p.current??''),next:text(p.next??'等待 Codex 明確同步下一步。'),summary:text(p.summary??''),phase:text(p.phase??'',120),updated_at:stamp(p.updated_at??null),source:'observed_public_messages',sync:{status:'observed',reported_at:stamp(p.sync.reported_at??null)},progress:{completed:0,total:0,percent:null,kind:'not_reported'}};
 }
-export async function mergedState(statePath,legacyPath,observations={projects:[],diagnostics:{}},summaryPath){
- const semantic=await readSemantic(statePath),legacy=legacyPath?legacyState(await readJSON(legacyPath,LIMITS.legacyBytes,{schema_version:1,updated_at:null,demo:false,projects:[]})):{projects:[]};const ids=new Set(legacy.projects.map(p=>p.id));for(const p of semantic.projects)if(ids.has(p.id))throw Error('Legacy and session identities conflict; no conversation was hidden');
- const projects=semantic.projects.map(p=>({...p,progress:{completed:p.tasks.filter(t=>FINISHED.has(t.status)&&t.evidence.length).length,total:p.tasks.length,percent:p.tasks.length?Math.floor(p.tasks.filter(t=>FINISHED.has(t.status)&&t.evidence.length).length*100/p.tasks.length):null,kind:'explicit_milestones'}}));
+function isVisible(project,excludedIds){return !excludedIds.has(String(project?.session_id??project?.id??'').toLowerCase());}
+export async function mergedState(statePath,legacyPath,observations={projects:[],diagnostics:{}},summaryPath,excludedIds=new Set()){
+ const semantic=await readSemantic(statePath),legacy=legacyPath?legacyState(await readJSON(legacyPath,LIMITS.legacyBytes,{schema_version:1,updated_at:null,demo:false,projects:[]})):{projects:[]};
+ const legacyProjects=legacy.projects.filter(p=>isVisible(p,excludedIds)),reported=semantic.projects.filter(p=>isVisible(p,excludedIds)),ids=new Set(legacyProjects.map(p=>p.id));
+ for(const p of reported)if(ids.has(p.id))throw Error('Legacy and session identities conflict; no conversation was hidden');
+ const projects=reported.map(p=>({...p,progress:{completed:p.tasks.filter(t=>FINISHED.has(t.status)&&t.evidence.length).length,total:p.tasks.length,percent:p.tasks.length?Math.floor(p.tasks.filter(t=>FINISHED.has(t.status)&&t.evidence.length).length*100/p.tasks.length):null,kind:'explicit_milestones'}}));
  const typedIDs=new Set(projects.map(p=>p.id));let summaries=emptyState(),summaryStatus='waiting';
  if(summaryPath){
   const pathKey=value=>process.platform==='win32'?path.resolve(value).toLowerCase():path.resolve(value);
   if(pathKey(summaryPath)===pathKey(statePath))throw Error('Conversation summaries must remain separate from live reports');
   try{summaries=await readSemantic(summaryPath);summaryStatus=summaries.projects.length?'loaded':'waiting';}catch{summaryStatus='invalid';}
  }
- const summarized=summaries.projects.filter(p=>!typedIDs.has(p.id)).map(p=>{
+ const summarized=summaries.projects.filter(p=>isVisible(p,excludedIds)&&!typedIDs.has(p.id)).map(p=>{
   if(ids.has(p.id))throw Error('Legacy and summary identities conflict; no conversation was hidden');
   const done=p.tasks.filter(t=>FINISHED.has(t.status)&&t.evidence.length).length;
   return {...p,source:'conversation_summary',progress:{completed:done,total:p.tasks.length,percent:p.tasks.length?Math.floor(done*100/p.tasks.length):null,kind:'reported_milestones'}};
  });
  projects.push(...summarized);const structuredIDs=new Set(projects.map(p=>p.id));
- const observed=unique(list(observations.projects??[],LIMITS.sessions).map(observedProject)).filter(p=>!structuredIDs.has(p.id)&&!ids.has(p.id));
+ const observed=unique(list(observations.projects??[],LIMITS.sessions).filter(p=>isVisible(p,excludedIds)).map(observedProject)).filter(p=>!structuredIDs.has(p.id)&&!ids.has(p.id));
  const diagnostics={},counts=new Set(['discovered','scanned','returned','omitted','excluded_subagents','excluded_unknown','invalid_paths','unreadable_rollouts','malformed_lines','cache_hits','bytes_read','max_sessions','window_bytes']),observationStatuses=new Set(['ok','codex_home_missing','sqlite_unavailable','database_missing','database_untrusted','database_unreadable','schema_unsupported','capacity_exceeded','disabled','unavailable']);
  for(const [key,value]of Object.entries(observations.diagnostics??{}))if((key==='available'||key==='limited')&&typeof value==='boolean'||counts.has(key)&&Number.isSafeInteger(value)&&value>=0&&value<=1e12||key==='status'&&observationStatuses.has(value))diagnostics[key]=value;
- projects.push(...observed);projects.sort((a,b)=>(b.updated_at??'').localeCompare(a.updated_at??''));return {schema_version:1,updated_at:semantic.updated_at??summaries.updated_at??legacy.updated_at??null,demo:projects.length?false:Boolean(legacy.demo),projects:[...projects,...legacy.projects],capacity:{max_sessions:LIMITS.sessions,sessions:semantic.projects.length,max_bytes:LIMITS.stateBytes,full:semantic.projects.length>=LIMITS.sessions,summary_sessions:summarized.length,observed_sessions:observed.length,observed_max_sessions:LIMITS.sessions},summary_sync:{status:summaryStatus,sessions:summarized.length},observation:diagnostics};
+ projects.push(...observed);projects.sort((a,b)=>(b.updated_at??'').localeCompare(a.updated_at??''));return {schema_version:1,updated_at:semantic.updated_at??summaries.updated_at??legacy.updated_at??null,demo:projects.length?false:Boolean(legacy.demo),projects:[...projects,...legacyProjects],capacity:{max_sessions:LIMITS.sessions,sessions:semantic.projects.length,max_bytes:LIMITS.stateBytes,full:semantic.projects.length>=LIMITS.sessions,summary_sessions:summarized.length,observed_sessions:observed.length,observed_max_sessions:LIMITS.sessions},summary_sync:{status:summaryStatus,sessions:summarized.length},observation:diagnostics};
 }
 const defaultConfig={schema_version:1,title:'每個聊天室的工作看板',subtitle:'每個對話的需求、目前工作、下一步與成果。',poll_seconds:5,complete_statuses:['done','passed','frozen'],show_agents:true,show_events:true};
 export function validateConfig(v){keys(v,Object.keys(defaultConfig),Object.keys(defaultConfig));if(v.schema_version!==1||!Number.isInteger(v.poll_seconds)||v.poll_seconds<1||v.poll_seconds>60||typeof v.show_agents!=='boolean'||typeof v.show_events!=='boolean')throw Error('Invalid board display configuration');list(v.complete_statuses,8);if(v.complete_statuses.some(s=>!['done','passed','frozen'].includes(s)))throw Error('Source readiness is not completion');return {...v,title:text(v.title,120),subtitle:text(v.subtitle,300)};}
-export async function createBoardServer({root=ROOT,state=path.join(root,'state-v2.json'),summaryState=path.join(root,'conversation-summaries.json'),planState=path.join(root,'project-plans.json'),legacyState:legacy=path.join(root,'state.json'),config=path.join(root,'config.json'),chatgptPilotState=path.join(root,'.runtime','chatgpt-pilot.json'),chatgptPlanDirectory=path.join(path.dirname(chatgptPilotState),'chatgpt-plans'),port=8787,instanceId=randomUUID(),observeCodex=true,codexHome=process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),observationProvider,executionProvider}={}){
+export async function createBoardServer({root=ROOT,state=path.join(root,'state-v2.json'),summaryState=path.join(root,'conversation-summaries.json'),planState=path.join(root,'project-plans.json'),legacyState:legacy=path.join(root,'state.json'),config=path.join(root,'config.json'),chatgptPilotState=path.join(root,'.runtime','chatgpt-pilot.json'),chatgptPlanDirectory=path.join(path.dirname(chatgptPilotState),'chatgpt-plans'),chatgptOrganizerState=path.join(path.dirname(chatgptPilotState),'chatgpt-organizers.json'),port=8787,instanceId=randomUUID(),observeCodex=true,codexHome=process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),observationProvider,executionProvider}={}){
  root=await fs.realpath(root);instanceId=uuid(instanceId);const fingerprint=createHash('sha256').update(root).digest('hex');
  const pathKey=p=>process.platform==='win32'?path.resolve(p).toLowerCase():path.resolve(p);
  if([state,summaryState,legacy].filter(Boolean).some(p=>pathKey(p)===pathKey(planState)))throw Error('Project plans must remain separate from work reports');
  if([state,summaryState,legacy,planState,config].filter(Boolean).some(p=>pathKey(p)===pathKey(chatgptPilotState)))throw Error('ChatGPT pilot data must use a separate local file');
  const chatgptPlans=path.resolve(chatgptPlanDirectory);
- if([state,summaryState,legacy,planState,config,chatgptPilotState].filter(Boolean).some(p=>pathKey(path.dirname(p))===pathKey(chatgptPlans)))throw Error('ChatGPT plans must have a separate local directory');
+ if([state,summaryState,legacy,planState,config,chatgptPilotState,chatgptOrganizerState].filter(Boolean).some(p=>pathKey(path.dirname(p))===pathKey(chatgptPlans)))throw Error('ChatGPT plans must have a separate local directory');
+ if([state,summaryState,legacy,planState,config,chatgptPilotState].filter(Boolean).some(p=>pathKey(p)===pathKey(chatgptOrganizerState)))throw Error('Organizer registrations must use a separate local file');
  if(typeof observeCodex!=='boolean'||typeof codexHome!=='string'||observationProvider!==undefined&&typeof observationProvider!=='function'||executionProvider!==undefined&&typeof executionProvider!=='function')throw Error('Invalid read-only observation configuration');
- let provider=observationProvider;
- async function observations(){if(!observeCodex)return {projects:[],diagnostics:{status:'disabled'}};try{provider??=(await import('./codex-observer.mjs')).observeCodex;const value=await provider({codexHome,maxSessions:LIMITS.sessions,headBytes:131072,tailBytes:131072});return {projects:unique(list(value.projects,LIMITS.sessions).map(observedProject)),diagnostics:value.diagnostics??{}};}catch{return {projects:[],diagnostics:{status:'unavailable'}};}}
+ let provider=observationProvider,organizerIds=new Set();
+ async function observations(excludedIds){
+  if(!observeCodex)return {projects:[],diagnostics:{status:'disabled'}};
+  try{
+   provider??=(await import('./codex-observer.mjs')).observeCodex;
+   const value=await provider({codexHome,maxSessions:LIMITS.sessions,headBytes:131072,tailBytes:131072});
+   const raw=list(value.projects,LIMITS.sessions),projects=unique(raw.filter(p=>isVisible(p,excludedIds)).map(observedProject));
+   const diagnostics={...value.diagnostics};
+   if(projects.length!==raw.length&&Number.isSafeInteger(diagnostics.returned))diagnostics.returned=projects.length;
+   return {projects,diagnostics};
+  }catch{return {projects:[],diagnostics:{status:'unavailable'}};}
+ }
  async function presentedState(){
-  const value=await mergedState(state,legacy,await observations(),summaryState);let labels={titles:new Map(),diagnostics:{available:false,status:observeCodex?'unavailable':'disabled'}};
+  // A temporary registry error must not interrupt other board data or reveal previously hidden rows.
+  try{const pilot=await import('./chatgpt-pilot.mjs');organizerIds=await pilot.readChatgptOrganizerIds(chatgptOrganizerState);}catch{}
+  const excludedIds=organizerIds;
+  const value=await mergedState(state,legacy,await observations(excludedIds),summaryState,excludedIds);let labels={titles:new Map(),diagnostics:{available:false,status:observeCodex?'unavailable':'disabled'}};
   if(observeCodex)try{labels=await(await import('./codex-titles.mjs')).readCodexTitles({codexHome});}catch{}
+  for(const id of excludedIds)labels.titles.delete(id);
+  if(labels.diagnostics.available)labels.diagnostics.accepted=labels.titles.size;
   let execution={sessions:new Map(),diagnostics:{available:false,status:observeCodex?'unavailable':'disabled',checked_at:now()}};
   if(observeCodex)try{executionProvider??=(await import('./codex-execution.mjs')).readCodexExecution;const sessionIds=value.projects.map(project=>{try{return uuid(project.session_id??project.id);}catch{return null;}}).filter(Boolean);execution=await executionProvider({codexHome,sessionIds});}catch{}
   const checked=now(),available=execution?.diagnostics?.available===true&&execution?.sessions instanceof Map;
   value.execution={available,status:available?'ok':observeCodex?'unavailable':'disabled',checked_at:checked};
   const plans=new Map();let planStatus='waiting';
-  try{const model=await import('./project-plan.mjs'),store=await model.readProjectPlans(planState);for(const plan of store.projects)plans.set(plan.session_id,model.presentPlan(plan));planStatus=plans.size?'loaded':'waiting';}catch{plans.clear();planStatus='invalid';}
+  try{const model=await import('./project-plan.mjs'),store=await model.readProjectPlans(planState);for(const plan of store.projects)if(!excludedIds.has(plan.session_id))plans.set(plan.session_id,model.presentPlan(plan));planStatus=plans.size?'loaded':'waiting';}catch{plans.clear();planStatus='invalid';}
   value.plan_sync={status:planStatus,sessions:plans.size};
   value.projects=value.projects.map(project=>{
    const id=project.session_id??project.id,live=execution?.sessions instanceof Map?execution.sessions.get(id):null;
@@ -163,15 +182,17 @@ export async function createBoardServer({root=ROOT,state=path.join(root,'state-v
   if(count!==1||![`127.0.0.1:${realPort}`,`localhost:${realPort}`].includes(host))return finish(403,'Untrusted local Host');
   const pilotRoute=req.url==='/chatgpt-pilot.json';
   const chatgptPlanRoute=req.url==='/chatgpt-plan.json'||req.url?.startsWith('/chatgpt-plan.json?');
-  if(req.method!=='GET'&&!pilotRoute&&!chatgptPlanRoute)return finish(405,'GET only');if((req.url??'').length>2048)return finish(414,'Request path too long');
+  const chatgptOrganizerRoute=req.url==='/chatgpt-organizer.json';
+  if(req.method!=='GET'&&!pilotRoute&&!chatgptPlanRoute&&!chatgptOrganizerRoute)return finish(405,'GET only');if((req.url??'').length>2048)return finish(414,'Request path too long');
   const routes={'/':'index.html','/app.js':'app.js','/styles.css':'styles.css','/plan-handoff.js':'plan-handoff.js'};let data,type,statusCode=200;const nonce=randomBytes(18).toString('base64url'),extraHeaders={};
   try{
-   if(pilotRoute||chatgptPlanRoute){
-    const {handleChatgptPilot,handleChatgptPlan}=await import('./chatgpt-pilot.mjs');
+   if(pilotRoute||chatgptPlanRoute||chatgptOrganizerRoute){
+    const {handleChatgptPilot,handleChatgptPlan,handleChatgptOrganizer}=await import('./chatgpt-pilot.mjs');
     const localOrigin=`http://${host}`;
-    const result=pilotRoute
-     ?await handleChatgptPilot(req,chatgptPilotState,localOrigin)
-     :await handleChatgptPlan(req,chatgptPilotState,chatgptPlans,localOrigin);
+    let result;
+    if(pilotRoute)result=await handleChatgptPilot(req,chatgptPilotState,localOrigin);
+    else if(chatgptPlanRoute)result=await handleChatgptPlan(req,chatgptPilotState,chatgptPlans,localOrigin);
+    else result=await handleChatgptOrganizer(req,chatgptPilotState,chatgptOrganizerState,localOrigin);
     statusCode=result.status;data=JSON.stringify(result.body);type='application/json; charset=utf-8';
     extraHeaders['Cross-Origin-Resource-Policy']='same-origin';
     if(result.allow)extraHeaders.Allow=result.allow;

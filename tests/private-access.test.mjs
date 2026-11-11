@@ -32,6 +32,8 @@ test('traversal, query, auth, Agent View and private-file routes never reach ups
  for(const method of ['POST','PUT','PATCH','DELETE','OPTIONS','HEAD','TRACE'])assert.equal((await wire(f.port,'/state.json',{method})).status,405,method);
  assert.equal((await wire(f.port,'/chatgpt-plan.json?id=02345999-7890-4abc-8def-1234567890bc')).status,404);
  assert.equal((await wire(f.port,'/chatgpt-plan.json',{method:'PUT'})).status,405);
+ assert.equal((await wire(f.port,'/chatgpt-organizer.json')).status,404);
+ assert.equal((await wire(f.port,'/chatgpt-organizer.json',{method:'PUT'})).status,405);
 });
 
 test('Host/Origin duplicates, wrong authorities and foreign origins are denied',async t=>{

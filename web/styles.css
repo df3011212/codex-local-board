@@ -104,14 +104,8 @@
 }
 
 .chatgpt-actions button,
-.plan-head-actions button,
-#chatgpt-auto-plan {
+.plan-head-actions button {
   min-height: 42px;
-  font-size: 13px;
-}
-
-#chatgpt-auto-plan-help {
-  margin: 0 0 12px;
   font-size: 13px;
 }
 
@@ -219,6 +213,55 @@
     flex-direction: column;
   }
 }
+
+.chatgpt-codex-dialog {
+  width: min(580px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+  color: var(--text);
+  overflow: auto;
+}
+.chatgpt-codex-dialog::backdrop { background: rgb(6 13 18 / 74%); }
+#chatgpt-codex-conversation:not(:empty) { margin-top: 4px; }
+.chatgpt-codex-body { padding: 16px 20px; }
+.chatgpt-codex-modes,
+.chatgpt-codex-fields {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.chatgpt-codex-modes { padding: 0; margin: 0; border: 0; }
+.chatgpt-codex-mode {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.chatgpt-codex-mode:has(input:checked) { border-color: #4e8073; background: #182e34; }
+.chatgpt-codex-mode input { min-height: 0; margin: 4px 0 0; accent-color: var(--teal); }
+.chatgpt-codex-mode small { display: block; margin-top: 3px; color: var(--muted); font-size: 13px; }
+.chatgpt-codex-title-preview span { color: var(--teal); overflow-wrap: anywhere; }
+.chatgpt-codex-fields { margin-top: 12px; }
+.chatgpt-codex-fields > :is(input, select) { width: 100%; min-width: 0; }
+.chatgpt-codex-fields label, .chatgpt-codex-fields p { font-size: 13px; }
+#chatgpt-codex-feedback:not(:empty) { margin-top: 10px; color: var(--amber); font-size: 13px; }
+.chatgpt-codex-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--line);
+}
+.chatgpt-codex-footer p { font-size: 13px; }
+#chatgpt-codex-launch[aria-disabled="true"] { opacity: .55; }
 
 /* ChatGPT project plan editor */
 .chatgpt-plan-dialog {

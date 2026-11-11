@@ -41,7 +41,12 @@
       <div class="panel-head"><div><p class="section-kicker">整個專案的階段、模組與驗收項目</p><h2 id="plan-heading">專案架構總覽</h2></div><span id="plan-source-kind" class="count">範圍待同步</span></div>
       <details id="demo-chatgpt-workflow" class="demo-chatgpt-workflow" hidden>
         <summary>查看如何用 Codex 把 ChatGPT 對話整理成專案架構</summary>
-        <p>在本機看板選一則尚無架構的 ChatGPT 對話，點「用 Codex 自動整理」並在桌面 Codex 按送出。若對話有明確專案，Codex 會整理出階段、模組和驗收項目，以原名存回該則 ChatGPT 的看板卡片。</p>
+        <p>本機操作從 ChatGPT 卡片的「用 Codex 自動整理」開始。選擇工作方式後，在桌面 Codex 按送出。</p>
+        <ul>
+          <li><strong>只整理架構：</strong>查看已有的架構，或依這則對話整理出階段、模組和驗收項目。符合條件時，以原對話名稱存回看板卡片。回到看板的 ChatGPT 分頁，在原對話卡片查看架構。Codex 應用程式會保留這則對話，標題加上「[ 回CHATGPT ]」。這次整理不會列在看板的 Codex 工作清單。</li>
+          <li><strong>整理架構並實作驗收：</strong>指定本機專案資料夾，已有架構就選一個未驗收項目。尚無架構時，Codex 先整理並找出第一個條件明確且可驗收的項目。整理、實作和測試在同一則 Codex 對話進行，條件不足時會先釐清。這則工作對話的標題會加上「[Chatgpt 轉移 CODEX]」，並列在看板的 Codex 工作清單。</li>
+        </ul>
+        <p>此公開頁面以合成資料說明流程。實際整理、實作和測試由本機桌面 Codex 處理。</p>
       </details>
       <div class="plan-overview"><h3 id="plan-title"></h3><p id="plan-goal"></p><p id="plan-summary"></p><p id="plan-scope-note" class="plan-scope-note"></p><div id="plan-counts" class="plan-counts"></div><div class="plan-overall"><div class="progress-head"><h3>全專案已列範圍的驗收比例</h3><strong id="plan-percent" class="percentage">範圍待補齊</strong></div><progress id="plan-progress" max="100" aria-label="全專案已列範圍的驗收項目完成比例" hidden></progress><p id="plan-progress-note"></p></div><details id="plan-source-details" class="plan-source-details"><summary>計畫來源與文件</summary><p id="plan-source-label"></p><p id="plan-updated"></p><div id="plan-references" class="plan-references"></div></details></div>
       <div class="plan-controls"><div><label for="plan-search">搜尋架構與驗收內容</label><input id="plan-search" type="search" placeholder="搜尋階段、模組或驗收項目" autocomplete="off"></div><label class="plan-filter"><input id="plan-unfinished" type="checkbox">只看未完成驗收項目</label><p id="plan-visible-count" role="status" aria-live="polite"></p></div>
