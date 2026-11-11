@@ -146,8 +146,8 @@
     },
     {
       "path": "README.md",
-      "size": 41353,
-      "sha256": "870fbfbb720a631b3d14693ce7e318f892b609d7688b305e7150be242d3c4fba"
+      "size": 41442,
+      "sha256": "a3d440f927ba8974119eac430fe14b986b0199336bd726e269949ee07baeab05"
     },
     {
       "path": "Start-Board.cmd",
@@ -251,8 +251,8 @@
     },
     {
       "path": "docs/demo/index.html",
-      "size": 9646,
-      "sha256": "733dc21b6734276b9162d1ac1bddda2ba3ecb4710d7c6ab56d18b23605f2234d"
+      "size": 9724,
+      "sha256": "b58fd291b78e5db510e72236a33845534012b6276fbb11f197b500dffd70a187"
     },
     {
       "path": "docs/demo/plan-handoff.js",
@@ -271,8 +271,8 @@
     },
     {
       "path": "docs/index.html",
-      "size": 2540007,
-      "sha256": "6a85fc8153aa65ded99727b2e16d418c6265f26d60b16b2ae1604f6b52c87a13"
+      "size": 2540112,
+      "sha256": "d77489aa60aeb7378e97881fb71ed8593ddf244d5830c1f513a9772a66cbe800"
     },
     {
       "path": "install-agent-guidance.mjs",
@@ -576,8 +576,8 @@
     },
     {
       "path": "使用說明.txt",
-      "size": 8149,
-      "sha256": "f836c77254b856f6b0f4080f71522c0cb72ef41ebb6167be134ab291049132cc"
+      "size": 8185,
+      "sha256": "03cd0145f5de618c560b40abeb85e75f197e4768df7a64578cf3a31defd9c4fe"
     }
   ],
   "private_mobile_entry": "Open-Phone-Board.cmd",

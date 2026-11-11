@@ -47,7 +47,7 @@ Codex 對話
 ChatGPT 對話（限同一台電腦開啟本機看板）
 在左欄切換 Codex／ChatGPT。已匯入的 ChatGPT 對話會保留原名，可搜尋或篩選封存狀態。
 請已登入的桌面 Codex 讀取所需的完整 ChatGPT 對話索引，再依 README 使用 chatgpt-pilot.mjs import 匯入。匯入資料只需對話 ID、名稱及封存狀態。
-對話尚無架構時，點「用 Codex 自動整理」，並在開啟的桌面 Codex 按送出。Codex 逐則判斷是否有可整理的專案；資料足夠時，計畫與整理對話沿用原 ChatGPT 名稱。
+對話尚無架構時，點「用 Codex 自動整理」，並在開啟的桌面 Codex 按送出。若這則 ChatGPT 對話有明確專案，Codex 會整理出階段、模組和驗收項目，以原對話名稱存回該則 ChatGPT 的看板卡片。
 也可以直接建立或編輯架構、更新手動進度，或開啟原 ChatGPT 對話。私人索引、進度和計畫都留在 .runtime，不要上傳。
 
 三、首次整理既有 Codex 聊天室
