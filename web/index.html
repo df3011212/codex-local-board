@@ -9,8 +9,14 @@
 <body>
 <header class="site-header">
   <div class="brand"><span class="brand-mark" aria-hidden="true">C</span><div><h1 id="title">Codex 對話進度看板</h1><p id="subtitle">清楚知道要做什麼、做到哪裡、接著做什麼。</p></div></div>
-  <div class="header-actions"><span class="chip" id="demo">僅限本機</span><button id="refresh" type="button">重新整理</button></div>
+  <div class="header-actions">
+    <span class="chip" id="demo">僅限本機</span>
+    <button id="architecture-package-import" type="button" aria-haspopup="dialog" aria-controls="chatgpt-codex-dialog" hidden>匯入架構包</button>
+    <input id="architecture-package-file" type="file" accept=".codex-plan.json,.json,application/json" hidden>
+    <button id="refresh" type="button">重新整理</button>
+  </div>
 </header>
+<p id="architecture-package-feedback" role="status" aria-live="polite" aria-atomic="true"></p>
 <div class="board-shell">
   <aside class="conversation-nav" aria-label="對話選單">
     <nav id="platform-switch" class="platform-switch" aria-label="切換對話看板" hidden>
@@ -71,7 +77,7 @@
     <p id="chatgpt-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></p>
     <section id="suggestions-panel" class="panel suggestions-panel" aria-labelledby="suggestions-heading"><div class="panel-head"><div><h2 id="suggestions-heading">建議下一步</h2><p>只顯示此對話 Codex 明確回報的建議；建議尚未開始，不會自動執行。</p></div><span id="suggestion-count" class="count">0</span></div><div id="suggestions" class="suggestions"></div><div class="suggestion-copy-area"><p id="suggestion-copy-note" role="status" aria-live="polite"></p><label for="suggestion-copy" id="suggestion-copy-label" hidden>請選取並手動複製建議</label><textarea id="suggestion-copy" readonly hidden></textarea></div></section>
     <section class="panel plan-panel" aria-labelledby="plan-heading">
-      <div class="panel-head"><div><p class="section-kicker">整個專案的階段、模組與驗收項目</p><h2 id="plan-heading">專案架構總覽</h2></div><div class="plan-head-actions"><span id="plan-source-kind" class="count">範圍待同步</span><button id="chatgpt-auto-plan" class="chatgpt-open" type="button" aria-haspopup="dialog" aria-controls="chatgpt-codex-dialog" hidden>交給 Codex</button><button id="chatgpt-edit-plan" type="button" hidden>建立架構</button></div></div>
+      <div class="panel-head"><div><p class="section-kicker">整個專案的階段、模組與驗收項目</p><h2 id="plan-heading">專案架構總覽</h2></div><div class="plan-head-actions"><span id="plan-source-kind" class="count">範圍待同步</span><button id="chatgpt-auto-plan" class="chatgpt-open" type="button" aria-haspopup="dialog" aria-controls="chatgpt-codex-dialog" hidden>交給 Codex</button><button id="chatgpt-edit-plan" type="button" hidden>建立架構</button><button id="chatgpt-download-plan-package" type="button" hidden>下載架構包</button></div></div>
       <div class="plan-overview"><h3 id="plan-title"></h3><p id="plan-goal"></p><p id="plan-summary"></p><p id="plan-scope-note" class="plan-scope-note"></p><div id="plan-counts" class="plan-counts"></div><div id="plan-overall" class="plan-overall"><div class="progress-head"><h3>全專案已列範圍的驗收比例</h3><strong id="plan-percent" class="percentage">範圍待補齊</strong></div><progress id="plan-progress" max="100" aria-label="全專案已列範圍的驗收項目完成比例" hidden></progress><p id="plan-progress-note"></p></div><details id="plan-source-details" class="plan-source-details"><summary>計畫來源與文件</summary><p id="plan-source-label"></p><p id="plan-updated"></p><div id="plan-references" class="plan-references"></div></details></div>
       <div id="plan-controls" class="plan-controls"><div><label for="plan-search">搜尋架構與驗收內容</label><input id="plan-search" type="search" placeholder="搜尋階段、模組或驗收項目" autocomplete="off"></div><label class="plan-filter"><input id="plan-unfinished" type="checkbox">只看未完成驗收項目</label><p id="plan-visible-count" role="status" aria-live="polite"></p></div>
       <p id="plan-handoff-policy" class="plan-handoff-policy">展開節點可「複製給 Codex」：驗收項目複製單項；階段、模組／分組包含全部子項。只會複製文字，請貼回原對話確認，不會自動傳送或執行。</p>
@@ -102,7 +108,8 @@
     <button id="chatgpt-codex-close" type="button">關閉</button>
   </div>
   <div class="chatgpt-codex-body">
-    <fieldset class="chatgpt-codex-modes" aria-labelledby="chatgpt-codex-heading">
+    <p id="architecture-package-dialog-help" hidden>選擇一個未驗收關卡和本機專案資料夾，即可交給 Codex 接手。</p>
+    <fieldset id="chatgpt-codex-modes" class="chatgpt-codex-modes" aria-labelledby="chatgpt-codex-heading">
       <label class="chatgpt-codex-mode">
         <input type="radio" name="chatgpt-codex-mode" id="chatgpt-codex-organize" value="organize" checked autofocus>
         <span>
@@ -116,7 +123,7 @@
         <span>
           <strong>整理架構並實作驗收</strong>
           <small class="chatgpt-codex-title-preview">Codex 標題預覽 <span id="chatgpt-codex-implement-title">[Chatgpt 轉移 CODEX] 原對話名稱</span></small>
-          <small>在指定資料夾接續一個關卡。工作對話會列入看板的 Codex 工作清單，驗收結果回報到這則 ChatGPT 架構。</small>
+          <small>已有架構時，Codex 會直接讀取本機看板，在指定資料夾接續一個關卡。工作對話會列入看板的 Codex 工作清單，驗收結果回報到這則 ChatGPT 架構。</small>
         </span>
       </label>
     </fieldset>

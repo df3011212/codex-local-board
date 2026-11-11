@@ -1,8 +1,9 @@
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {ROOT, argumentsFor, keys, list, lockedJsonUpdate, parseShortJSON, readJSON, redact, text, uuid} from './board-node.mjs';
-import {PLAN_LIMITS, presentPlan, readProjectPlans, writeProjectPlan} from './project-plan.mjs';
+import {PLAN_LIMITS, normalizePlanContent, presentPlan, readProjectPlans, writeProjectPlan} from './project-plan.mjs';
 
 const REQUEST_BYTES = 16384;
 const HTTP_DRAIN_OVERRUN_BYTES = 64 * 1024;
@@ -155,15 +156,15 @@ function errorResponse(status, error, allow) {
   return {status, body: {error}, allow};
 }
 
-function requestError(req, localOrigin, resource) {
-  if (req.method !== 'GET' && req.method !== 'PUT') {
-    return errorResponse(405, '只接受讀取及儲存' + resource + '。', 'GET, PUT');
+function requestError(req, localOrigin, resource, methods = ['GET', 'PUT']) {
+  if (!methods.includes(req.method)) {
+    return errorResponse(405, '只接受讀取及儲存' + resource + '。', methods.join(', '));
   }
   const origin = req.headers.origin;
   if ((origin !== undefined && origin !== localOrigin) || req.headers['sec-fetch-site'] === 'cross-site') {
     return errorResponse(403, '請從本機看板開啟' + resource + '。');
   }
-  if (req.method === 'PUT' && origin !== localOrigin) {
+  if (req.method !== 'GET' && origin !== localOrigin) {
     return errorResponse(403, '請從本機看板儲存' + resource + '。');
   }
   return null;
@@ -314,7 +315,7 @@ function planResponse(plan) {
   return {status: 200, body: {plan: plan ? presentPlan(plan) : null}};
 }
 
-async function loadChatPlan(directory, id) {
+async function readStoredPlan(directory, filename, id) {
   // Do not follow a redirected plan directory when serving private files.
   let resolved;
   try {
@@ -323,9 +324,18 @@ async function loadChatPlan(directory, id) {
     if (error.code === 'ENOENT') return null;
     throw error;
   }
-  if (path.relative(directory, resolved)) throw Error('Unexpected ChatGPT plan storage directory');
-  const store = await readProjectPlans(path.join(directory, id + '.json'));
+  if (path.relative(directory, resolved)) throw Error('Unexpected plan storage directory');
+  const store = await readProjectPlans(path.join(directory, filename));
   return store.projects.find(plan => plan.session_id === id);
+}
+
+function planFailure(failure) {
+  const code = failure.planCode;
+  if (code === 'PLAN_CONFLICT') {
+    return {status: 409, body: {error: '此架構已更新。請先讀取最新版本再儲存。', code}};
+  }
+  if (planErrors.has(code)) return {status: 400, body: {error: planErrors.get(code), code}};
+  throw failure;
 }
 
 export async function handleChatgptPlan(req, index, directory, localOrigin) {
@@ -358,7 +368,7 @@ export async function handleChatgptPlan(req, index, directory, localOrigin) {
   if (!chat) {
     return errorResponse(404, '找不到這則已匯入的對話。');
   }
-  if (req.method === 'GET') return planResponse(await loadChatPlan(directory, id));
+  if (req.method === 'GET') return planResponse(await readStoredPlan(directory, id + '.json', id));
   if (useOriginalTitle && expected !== null) {
     return {status: 409, body: {error: '沿用對話名稱只適用於首次建立架構。', code: 'PLAN_CONFLICT'}};
   }
@@ -371,12 +381,112 @@ export async function handleChatgptPlan(req, index, directory, localOrigin) {
     const store = await writeProjectPlan(filename, id, plan, {timeoutMs: 3500, expectedUpdatedAt: expected});
     return planResponse(store.projects.find(item => item.session_id === id));
   } catch (failure) {
-    const code = failure.planCode;
-    if (code === 'PLAN_CONFLICT') {
-      return {status: 409, body: {error: '此架構已更新。請先讀取最新版本再儲存。', code}};
+    return planFailure(failure);
+  }
+}
+
+const PACKAGE_ROUTE = '/architecture-package.json';
+const PACKAGE_FORMAT = 'codex-local-board.plan-package';
+const PACKAGE_VERSION = 1;
+const PACKAGE_STORE = 'plans.json';
+
+function normalizePackage(input) {
+  const fields = ['format', 'version', 'plan'];
+  keys(input, fields, fields);
+  if (input.format !== PACKAGE_FORMAT || input.version !== PACKAGE_VERSION) throw Error('Unsupported plan package version');
+  const contentFields = ['title', 'goal', 'summary', 'source', 'nodes'];
+  keys(input.plan, contentFields, contentFields);
+  if (typeof input.plan.summary !== 'string') throw Error('Plan summary must be text');
+  return normalizePlanContent(input.plan);
+}
+
+function packageId(plan) {
+  const bytes = createHash('sha256').update(PACKAGE_FORMAT + '\0' + PACKAGE_VERSION + '\0')
+    .update(JSON.stringify(plan)).digest().subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x80;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return hex.replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
+}
+
+function packageResponse(id, plan) {
+  if (!plan) return errorResponse(404, '找不到本機架構包。');
+  return {status: 200, body: {id, plan: presentPlan(plan)}};
+}
+
+function packageTask(input) {
+  const fields = ['id', 'expected_updated_at', 'task'];
+  keys(input, fields, fields);
+  const taskFields = ['id', 'status', 'detail', 'evidence'];
+  keys(input.task, taskFields, taskFields);
+  const {id, status, detail, evidence} = input.task;
+  if (typeof id !== 'string' || typeof status !== 'string' || typeof detail !== 'string' || !Array.isArray(evidence)) {
+    throw Error('Invalid task fields');
+  }
+  return {id: uuid(input.id), expectedUpdatedAt: timestamp(input.expected_updated_at), task: input.task};
+}
+
+async function importPackage(directory, plan) {
+  const id = packageId(plan);
+  const existing = await readStoredPlan(directory, PACKAGE_STORE, id);
+  if (existing) return packageResponse(id, existing);
+  try {
+    const store = await writeProjectPlan(path.join(directory, PACKAGE_STORE), id, plan, {
+      timeoutMs: 3500,
+      expectedUpdatedAt: null,
+    });
+    return packageResponse(id, store.projects.find(item => item.session_id === id));
+  } catch (failure) {
+    if (failure.planCode !== 'PLAN_CONFLICT') throw failure;
+    // Another import of the same content won the creation race.
+    const created = await readStoredPlan(directory, PACKAGE_STORE, id);
+    if (!created) throw failure;
+    return packageResponse(id, created);
+  }
+}
+
+async function updatePackage(directory, {id, expectedUpdatedAt, task}) {
+  const plan = await readStoredPlan(directory, PACKAGE_STORE, id);
+  if (!plan) return packageResponse(id, null);
+  const target = plan.nodes.find(node => node.id === task.id);
+  if (!target) return errorResponse(404, '找不到這個驗收項目。');
+  if (target.kind !== 'task') return errorResponse(400, '只能儲存單一驗收項目的進度。');
+  const store = await writeProjectPlan(path.join(directory, PACKAGE_STORE), id, {nodes: [task]}, {
+    patch: true,
+    timeoutMs: 3500,
+    expectedUpdatedAt,
+  });
+  return packageResponse(id, store.projects.find(item => item.session_id === id));
+}
+
+export async function handleArchitecturePackage(req, directory, localOrigin) {
+  const error = requestError(req, localOrigin, '架構包', ['GET', 'POST', 'PUT']);
+  if (error) return error;
+
+  let input;
+  try {
+    if (req.method === 'GET') {
+      const prefix = PACKAGE_ROUTE + '?id=';
+      if (!req.url.startsWith(prefix)) throw Error('Missing package ID');
+      input = uuid(req.url.slice(prefix.length));
+    } else {
+      if (req.url !== PACKAGE_ROUTE) throw Error('Unexpected package query');
+      const body = await readRequestJSON(req, PLAN_LIMITS.payloadBytes + 1024);
+      input = req.method === 'POST' ? normalizePackage(body) : packageTask(body);
     }
-    if (planErrors.has(code)) return {status: 400, body: {error: planErrors.get(code), code}};
-    throw failure;
+  } catch (failure) {
+    if (planErrors.has(failure.planCode)) return planFailure(failure);
+    return errorResponse(400, '架構包格式、版本或驗收項目資料不正確。');
+  }
+
+  try {
+    if (req.method === 'GET') return packageResponse(input, await readStoredPlan(directory, PACKAGE_STORE, input));
+    return req.method === 'POST' ? await importPackage(directory, input) : await updatePackage(directory, input);
+  } catch (failure) {
+    if (['SESSION_CAPACITY', 'STORE_FULL'].includes(failure.planCode)) {
+      return {status: 409, body: {error: '本機架構包儲存空間已達上限。', code: failure.planCode}};
+    }
+    return planFailure(failure);
   }
 }
 

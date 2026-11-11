@@ -131,13 +131,15 @@ export async function mergedState(statePath,legacyPath,observations={projects:[]
 }
 const defaultConfig={schema_version:1,title:'每個聊天室的工作看板',subtitle:'每個對話的需求、目前工作、下一步與成果。',poll_seconds:5,complete_statuses:['done','passed','frozen'],show_agents:true,show_events:true};
 export function validateConfig(v){keys(v,Object.keys(defaultConfig),Object.keys(defaultConfig));if(v.schema_version!==1||!Number.isInteger(v.poll_seconds)||v.poll_seconds<1||v.poll_seconds>60||typeof v.show_agents!=='boolean'||typeof v.show_events!=='boolean')throw Error('Invalid board display configuration');list(v.complete_statuses,8);if(v.complete_statuses.some(s=>!['done','passed','frozen'].includes(s)))throw Error('Source readiness is not completion');return {...v,title:text(v.title,120),subtitle:text(v.subtitle,300)};}
-export async function createBoardServer({root=ROOT,state=path.join(root,'state-v2.json'),summaryState=path.join(root,'conversation-summaries.json'),planState=path.join(root,'project-plans.json'),legacyState:legacy=path.join(root,'state.json'),config=path.join(root,'config.json'),chatgptPilotState=path.join(root,'.runtime','chatgpt-pilot.json'),chatgptPlanDirectory=path.join(path.dirname(chatgptPilotState),'chatgpt-plans'),chatgptOrganizerState=path.join(path.dirname(chatgptPilotState),'chatgpt-organizers.json'),port=8787,instanceId=randomUUID(),observeCodex=true,codexHome=process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),observationProvider,executionProvider}={}){
+export async function createBoardServer({root=ROOT,state=path.join(root,'state-v2.json'),summaryState=path.join(root,'conversation-summaries.json'),planState=path.join(root,'project-plans.json'),legacyState:legacy=path.join(root,'state.json'),config=path.join(root,'config.json'),chatgptPilotState=path.join(root,'.runtime','chatgpt-pilot.json'),chatgptPlanDirectory=path.join(path.dirname(chatgptPilotState),'chatgpt-plans'),chatgptOrganizerState=path.join(path.dirname(chatgptPilotState),'chatgpt-organizers.json'),architecturePackageDirectory=path.join(root,'.runtime','architecture-packages'),port=8787,instanceId=randomUUID(),observeCodex=true,codexHome=process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),observationProvider,executionProvider}={}){
  root=await fs.realpath(root);instanceId=uuid(instanceId);const fingerprint=createHash('sha256').update(root).digest('hex');
  const pathKey=p=>process.platform==='win32'?path.resolve(p).toLowerCase():path.resolve(p);
  if([state,summaryState,legacy].filter(Boolean).some(p=>pathKey(p)===pathKey(planState)))throw Error('Project plans must remain separate from work reports');
  if([state,summaryState,legacy,planState,config].filter(Boolean).some(p=>pathKey(p)===pathKey(chatgptPilotState)))throw Error('ChatGPT pilot data must use a separate local file');
  const chatgptPlans=path.resolve(chatgptPlanDirectory);
  if([state,summaryState,legacy,planState,config,chatgptPilotState,chatgptOrganizerState].filter(Boolean).some(p=>pathKey(path.dirname(p))===pathKey(chatgptPlans)))throw Error('ChatGPT plans must have a separate local directory');
+ const architecturePackages=path.resolve(architecturePackageDirectory);
+ if(pathKey(architecturePackages)===pathKey(chatgptPlans)||[state,summaryState,legacy,planState,config,chatgptPilotState,chatgptOrganizerState].filter(Boolean).some(p=>pathKey(path.dirname(p))===pathKey(architecturePackages)))throw Error('Architecture packages must have a separate local directory');
  if([state,summaryState,legacy,planState,config,chatgptPilotState].filter(Boolean).some(p=>pathKey(p)===pathKey(chatgptOrganizerState)))throw Error('Organizer registrations must use a separate local file');
  if(typeof observeCodex!=='boolean'||typeof codexHome!=='string'||observationProvider!==undefined&&typeof observationProvider!=='function'||executionProvider!==undefined&&typeof executionProvider!=='function')throw Error('Invalid read-only observation configuration');
  let provider=observationProvider,organizerIds=new Set();
@@ -183,16 +185,19 @@ export async function createBoardServer({root=ROOT,state=path.join(root,'state-v
   const pilotRoute=req.url==='/chatgpt-pilot.json';
   const chatgptPlanRoute=req.url==='/chatgpt-plan.json'||req.url?.startsWith('/chatgpt-plan.json?');
   const chatgptOrganizerRoute=req.url==='/chatgpt-organizer.json';
-  if(req.method!=='GET'&&!pilotRoute&&!chatgptPlanRoute&&!chatgptOrganizerRoute)return finish(405,'GET only');if((req.url??'').length>2048)return finish(414,'Request path too long');
+  const architecturePackageRoute=req.url==='/architecture-package.json'||req.url?.startsWith('/architecture-package.json?');
+  const privateRoute=pilotRoute||chatgptPlanRoute||chatgptOrganizerRoute||architecturePackageRoute;
+  if(req.method!=='GET'&&!privateRoute)return finish(405,'GET only');if((req.url??'').length>2048)return finish(414,'Request path too long');
   const routes={'/':'index.html','/app.js':'app.js','/styles.css':'styles.css','/plan-handoff.js':'plan-handoff.js'};let data,type,statusCode=200;const nonce=randomBytes(18).toString('base64url'),extraHeaders={};
   try{
-   if(pilotRoute||chatgptPlanRoute||chatgptOrganizerRoute){
-    const {handleChatgptPilot,handleChatgptPlan,handleChatgptOrganizer}=await import('./chatgpt-pilot.mjs');
+   if(privateRoute){
+    const {handleChatgptPilot,handleChatgptPlan,handleChatgptOrganizer,handleArchitecturePackage}=await import('./chatgpt-pilot.mjs');
     const localOrigin=`http://${host}`;
     let result;
     if(pilotRoute)result=await handleChatgptPilot(req,chatgptPilotState,localOrigin);
     else if(chatgptPlanRoute)result=await handleChatgptPlan(req,chatgptPilotState,chatgptPlans,localOrigin);
-    else result=await handleChatgptOrganizer(req,chatgptPilotState,chatgptOrganizerState,localOrigin);
+    else if(chatgptOrganizerRoute)result=await handleChatgptOrganizer(req,chatgptPilotState,chatgptOrganizerState,localOrigin);
+    else result=await handleArchitecturePackage(req,architecturePackages,localOrigin);
     statusCode=result.status;data=JSON.stringify(result.body);type='application/json; charset=utf-8';
     extraHeaders['Cross-Origin-Resource-Policy']='same-origin';
     if(result.allow)extraHeaders.Allow=result.allow;

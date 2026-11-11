@@ -224,6 +224,8 @@ function visualMetric(metric){return(typeof metric.value==="number"||typeof metr
 
 const CHATGPT_PILOT_ROUTE = "/chatgpt-pilot.json";
 const CHATGPT_PLAN_ROUTE = "/chatgpt-plan.json";
+const ARCHITECTURE_PACKAGE_ROUTE = "/architecture-package.json";
+const ARCHITECTURE_PACKAGE_LIMIT = 512 * 1024 + 1024;
 const CHATGPT_PAGE_SIZE = 50;
 const CHATGPT_STATUS_LABELS = {
   not_started: "尚未開始",
@@ -273,6 +275,112 @@ function chatGPTCodexTasks(plan) {
   });
 }
 
+function architecturePackageFilename(title) {
+  const safe = Array.from(text(title).replace(/[<>:"/\\|?*\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/gu, "_"))
+    .slice(0, 100).join("").trim().replace(/^[. ]+|[. ]+$/g, "");
+  const reserved = /^(?:con|prn|aux|nul|(?:com|lpt)[1-9¹²³])(?:\.|$)/i.test(safe);
+  const name = !safe ? "架構包" : reserved ? "架構包-" + safe : safe;
+  return name + ".codex-plan.json";
+}
+
+function downloadArchitecturePackage(plan) {
+  const buildPackage = handoffBuilder()?.buildArchitecturePackage;
+  if (typeof buildPackage !== "function") throw Error("暫時無法準備架構包，請重新讀取看板。");
+  const blob = new Blob([JSON.stringify(buildPackage(plan))], {type: "application/json;charset=utf-8"});
+  if (blob.size > ARCHITECTURE_PACKAGE_LIMIT) throw Error("架構包超過大小上限。");
+  const href = URL.createObjectURL(blob);
+  const link = element("a");
+  link.hidden = true;
+  link.download = architecturePackageFilename(plan.title);
+  link.href = href;
+  document.body.append(link);
+  try { link.click(); }
+  finally {
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  }
+}
+
+async function readArchitecturePackage(response) {
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw Error(text(payload?.error) || "架構包暫時無法讀取，請稍後再試。");
+  const {id, plan} = payload || {};
+  if (typeof id !== "string" || !/^[a-f\d]{8}-[a-f\d]{4}-8[a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/.test(id)
+      || !text(plan?.title) || !projectPlan({id, session_id: id, plan}).full) {
+    throw Error("無法辨識收到的架構包。");
+  }
+  return {kind: "package", card: {id, title: plan.title}, plan};
+}
+
+function connectArchitecturePackageImport(dialog) {
+  const entry = query("architecture-package-import");
+  const file = query("architecture-package-file");
+  const feedback = query("architecture-package-feedback");
+  let refreshing = false;
+
+  function announce(message, error = false) {
+    feedback.textContent = message;
+    feedback.classList.toggle("error", error);
+  }
+
+  async function refreshPackage() {
+    const id = dialog.openPackageId();
+    if (!id || refreshing || document.visibilityState === "hidden") return;
+    refreshing = true;
+    try {
+      const response = await fetch(ARCHITECTURE_PACKAGE_ROUTE + "?id=" + encodeURIComponent(id), {
+        cache: "no-store", signal: AbortSignal.timeout(5000),
+      });
+      const snapshot = await readArchitecturePackage(response);
+      if (snapshot.card.id === id) dialog.refreshPackage(snapshot);
+    } catch (_) {
+      if (dialog.openPackageId() === id) dialog.showPackageNotice("暫時無法更新架構包，稍後可重新匯入同一份檔案。");
+    } finally {
+      refreshing = false;
+    }
+  }
+
+  entry.hidden = false;
+  entry.addEventListener("click", () => file.click());
+  file.addEventListener("change", async () => {
+    const selected = file.files?.[0];
+    file.value = "";
+    if (!selected || entry.disabled) return;
+    entry.disabled = true;
+    announce("正在匯入架構包…");
+    try {
+      if (selected.size > ARCHITECTURE_PACKAGE_LIMIT + 3) throw Error("架構包超過大小上限。");
+      let data;
+      try {
+        const utf8 = new TextDecoder("utf-8", {fatal: true}).decode(await selected.arrayBuffer());
+        data = JSON.parse(utf8.replace(/^\ufeff/, ""));
+      } catch (_) {
+        throw Error("請選擇有效的 UTF-8 JSON 架構包。");
+      }
+      if (!data || typeof data !== "object" || Array.isArray(data)) throw Error("請選擇有效的 JSON 架構包。");
+      const body = JSON.stringify(data);
+      if (new TextEncoder().encode(body).byteLength > ARCHITECTURE_PACKAGE_LIMIT) {
+        throw Error("架構包超過大小上限。");
+      }
+      const response = await fetch(ARCHITECTURE_PACKAGE_ROUTE, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body,
+        signal: AbortSignal.timeout(5000),
+      });
+      const snapshot = await readArchitecturePackage(response);
+      if (!dialog.open(snapshot)) throw Error("架構包已匯入。請先關閉目前的交接視窗，再選擇同一份檔案。");
+      announce("已匯入架構包。");
+    } catch (error) {
+      announce(error?.message || "架構包暫時無法匯入，請稍後再試。", true);
+    } finally {
+      entry.disabled = false;
+    }
+  });
+  window.addEventListener("focus", refreshPackage);
+  document.addEventListener("visibilitychange", refreshPackage);
+}
+
 function chatGPTCodexDialog({getSelection, onLaunch}) {
   const dialog = query("chatgpt-codex-dialog");
   const organize = query("chatgpt-codex-organize");
@@ -294,19 +402,24 @@ function chatGPTCodexDialog({getSelection, onLaunch}) {
 
   function updateLink() {
     if (!selection) return unavailable("");
-    const current = getSelection();
+    const fromPackage = selection.kind === "package";
+    const current = fromPackage ? selection : getSelection();
     const planVersion = selection.plan?.updated_at ?? null;
     if (!current || current.card.id !== selection.card.id || (current.plan?.updated_at ?? null) !== planVersion) {
       return unavailable("對話或架構已更新，請重新開啟交接視窗。");
     }
-    const mode = implement.checked ? "implement" : "organize";
+    const mode = fromPackage || implement.checked ? "implement" : "organize";
     if (mode === "implement" && selection.plan && !availableTasks.length) {
       return unavailable("這個架構沒有未驗收的關卡。");
     }
-    const buildLink = handoffBuilder()?.buildChatGptCodexLink;
+    const builder = handoffBuilder();
+    const buildLink = fromPackage ? builder?.buildArchitecturePackageCodexLink : builder?.buildChatGptCodexLink;
     if (typeof buildLink !== "function") return unavailable("暫時無法準備 Codex 交接，請重新讀取看板。");
-    const parameters = {origin: location.origin, conversationId: selection.card.id, mode};
-    if (mode === "implement") {
+    const parameters = fromPackage
+      ? {origin: location.origin, packageId: selection.card.id, workspacePath: workspace.value,
+        taskId: task.value, planVersion, title: selection.card.title}
+      : {origin: location.origin, conversationId: selection.card.id, mode};
+    if (!fromPackage && mode === "implement") {
       parameters.workspacePath = workspace.value;
       parameters.hasPlan = Boolean(selection.plan);
       if (parameters.hasPlan) {
@@ -325,15 +438,19 @@ function chatGPTCodexDialog({getSelection, onLaunch}) {
   }
 
   function updateMode() {
-    const showFields = implement.checked;
+    const showFields = selection.kind === "package" || implement.checked;
     query("chatgpt-codex-implement-fields").hidden = !showFields;
     workspace.required = showFields;
     task.required = showFields && Boolean(selection.plan) && availableTasks.length > 0;
   }
 
+  function draftKey(current) {
+    return (current.kind === "package" ? "package:" : "chatgpt:") + current.card.id;
+  }
+
   function keepDraft() {
     if (!selection) return;
-    drafts.set(selection.card.id, {
+    drafts.set(draftKey(selection), {
       mode: implement.checked ? "implement" : "organize",
       workspace: workspace.value,
       taskId: task.value,
@@ -353,17 +470,19 @@ function chatGPTCodexDialog({getSelection, onLaunch}) {
       event.preventDefault();
       return;
     }
+    if (selection.kind === "package") {
+      feedback.textContent = "回到看板時會重新讀取架構包的驗收進度。";
+      return;
+    }
     onLaunch({id: selection.card.id, version: selection.plan?.updated_at ?? null});
     // Keep the link in the open dialog until native navigation has been dispatched.
     setTimeout(() => dialog.close(), 0);
   });
 
-  return () => {
-    if (dialog.open) return;
-    const current = getSelection();
-    if (!current) return;
+  function setSelection(current) {
     selection = current;
-    const draft = drafts.get(selection.card.id);
+    const fromPackage = selection.kind === "package";
+    const draft = drafts.get(draftKey(selection));
     const hasPlan = Boolean(selection.plan);
     availableTasks = chatGPTCodexTasks(selection.plan);
     const options = [element("option", availableTasks.length ? "選擇未驗收關卡" : "沒有未驗收的關卡")];
@@ -377,15 +496,41 @@ function chatGPTCodexDialog({getSelection, onLaunch}) {
     task.disabled = !availableTasks.length;
     task.value = availableTasks.some(item => item.id === draft?.taskId) ? draft.taskId : "";
     workspace.value = draft?.workspace || "";
-    implement.checked = draft?.mode === "implement";
+    implement.checked = fromPackage || draft?.mode === "implement";
     organize.checked = !implement.checked;
+    query("chatgpt-codex-heading").textContent = fromPackage ? "接手架構包" : "選擇交接方式";
+    query("chatgpt-codex-modes").hidden = fromPackage;
+    query("architecture-package-dialog-help").hidden = !fromPackage;
     query("chatgpt-codex-task-group").hidden = !hasPlan;
     query("chatgpt-codex-first-task").hidden = hasPlan;
     query("chatgpt-codex-conversation").textContent = selection.card.title;
     updateMode();
     updateLink();
-    dialog.showModal();
-    (implement.checked ? implement : organize).focus();
+  }
+
+  function openPackageId() {
+    return dialog.open && selection?.kind === "package" ? selection.card.id : null;
+  }
+
+  return {
+    open(imported) {
+      if (dialog.open) return false;
+      const current = imported || getSelection();
+      if (!current) return false;
+      setSelection(current);
+      dialog.showModal();
+      (imported ? workspace : implement.checked ? implement : organize).focus();
+      return true;
+    },
+    openPackageId,
+    refreshPackage(snapshot) {
+      if (openPackageId() === snapshot.card.id && selection.plan.updated_at !== snapshot.plan.updated_at) {
+        setSelection(snapshot);
+      }
+    },
+    showPackageNotice(message) {
+      if (openPackageId()) feedback.textContent = message;
+    },
   };
 }
 
@@ -409,6 +554,8 @@ function startChatGPTPilot({onPlatformChange, getConfig}) {
   const empty = query("chatgpt-empty");
   const editPlan = query("chatgpt-edit-plan");
   const autoPlan = query("chatgpt-auto-plan");
+  const downloadPackage = query("chatgpt-download-plan-package");
+  const packagesEnabled = location.pathname === "/";
   const inputs = {
     status: query("chatgpt-status"),
     summary: query("chatgpt-summary"),
@@ -425,7 +572,7 @@ function startChatGPTPilot({onPlatformChange, getConfig}) {
   let readAt = null;
   let loadError = false;
   let requestedPlan = null;
-  const showCodexDialog = chatGPTCodexDialog({
+  const codexDialog = chatGPTCodexDialog({
     getSelection() {
       const card = cards.get(selected);
       const saved = plans.get(selected);
@@ -433,6 +580,7 @@ function startChatGPTPilot({onPlatformChange, getConfig}) {
     },
     onLaunch: request => { requestedPlan = request; },
   });
+  if (packagesEnabled) connectArchitecturePackageImport(codexDialog);
 
   function switchPlatform(showChatGPT, {refreshPlan = false} = {}) {
     visible = showChatGPT;
@@ -449,6 +597,7 @@ function startChatGPTPilot({onPlatformChange, getConfig}) {
       else void loadPlan(selected);
     } else {
       autoPlan.hidden = true;
+      downloadPackage.hidden = true;
     }
   }
 
@@ -557,6 +706,7 @@ function startChatGPTPilot({onPlatformChange, getConfig}) {
     editPlan.disabled = saved?.status !== "ready";
     editPlan.textContent = plan ? "編輯架構" : "建立架構";
     autoPlan.hidden = !card || saved?.status !== "ready";
+    downloadPackage.hidden = !packagesEnabled || !card || saved?.status !== "ready" || !plan;
     if (!card) {
       open.removeAttribute("href");
       return;
@@ -729,7 +879,17 @@ function startChatGPTPilot({onPlatformChange, getConfig}) {
   chatGPTButton.addEventListener("click", () => switchPlatform(true));
   reload.addEventListener("click", () => void loadCards());
   editPlan.addEventListener("click", editSelectedPlan);
-  autoPlan.addEventListener("click", showCodexDialog);
+  autoPlan.addEventListener("click", () => codexDialog.open());
+  downloadPackage.addEventListener("click", () => {
+    const saved = plans.get(selected);
+    if (!visible || !packagesEnabled || !cards.has(selected) || saved?.status !== "ready" || !saved.plan) return;
+    try {
+      downloadArchitecturePackage(saved.plan);
+      announce("已開始下載架構包。");
+    } catch (error) {
+      announce(error?.message || "架構包暫時無法下載，請稍後再試。", true);
+    }
+  });
   window.addEventListener("focus", refreshRequestedPlan);
   window.addEventListener("hashchange", selectLinkedChat);
   document.addEventListener("visibilitychange", refreshRequestedPlan);

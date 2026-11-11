@@ -1,0 +1,62 @@
+{
+  "format": "codex-local-board.plan-package",
+  "version": 1,
+  "plan": {
+    "title": "社區圖書交換活動",
+    "goal": "把活動規劃整理成可逐項核對的交付清單。",
+    "summary": "計畫名稱沿用示範對話的原名。",
+    "source": {
+      "kind": "generated",
+      "label": "依公開展示用的合成情境整理",
+      "references": []
+    },
+    "nodes": [
+      {
+        "id": "demo-chatgpt-planning-phase",
+        "parent_id": null,
+        "title": "活動籌備",
+        "kind": "phase",
+        "status": "in_progress",
+        "detail": "先確認活動範圍，再安排現場流程。",
+        "evidence": [],
+        "depends_on": []
+      },
+      {
+        "id": "demo-chatgpt-activity-module",
+        "parent_id": "demo-chatgpt-planning-phase",
+        "title": "活動流程",
+        "kind": "module",
+        "status": "in_progress",
+        "detail": "確認時間、入場、報到和交換方式。",
+        "evidence": [],
+        "depends_on": []
+      },
+      {
+        "id": "demo-chatgpt-scope-check",
+        "parent_id": "demo-chatgpt-activity-module",
+        "title": "確認活動的時間與參與方式",
+        "kind": "task",
+        "status": "passed",
+        "detail": "流程草案已列出時間、入場方式與交換規則。",
+        "evidence": [
+          {
+            "label": "合成示例・活動範圍核對紀錄"
+          }
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "demo-chatgpt-flow-check",
+        "parent_id": "demo-chatgpt-activity-module",
+        "title": "核對報到與圖書交換流程",
+        "kind": "task",
+        "status": "pending",
+        "detail": "等流程表和志工分工確認後再驗收。",
+        "evidence": [],
+        "depends_on": [
+          "demo-chatgpt-scope-check"
+        ]
+      }
+    ]
+  }
+}

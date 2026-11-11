@@ -103,6 +103,21 @@
   justify-content: flex-end;
 }
 
+.header-actions:has(#architecture-package-import:not([hidden])) {
+  flex-wrap: wrap;
+}
+
+#architecture-package-feedback:not(:empty) {
+  padding: 10px clamp(16px, 3vw, 30px);
+  border-bottom: 1px solid var(--line);
+  color: var(--teal);
+  font-size: 13px;
+}
+
+#architecture-package-feedback.error {
+  color: var(--amber);
+}
+
 .chatgpt-actions button,
 .plan-head-actions button {
   min-height: 42px;

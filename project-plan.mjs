@@ -40,7 +40,9 @@ function nodes(value){
  for(const node of result){const seen=new Set();let current=node;while(current){if(seen.has(current.id))invalid('CYCLE');seen.add(current.id);if(seen.size>PLAN_LIMITS.depth)invalid('DEPTH');current=current.parent_id===null?null:byId.get(current.parent_id);}const count=children.get(node.id).length;if(node.kind==='task'&&count||node.kind!=='task'&&!count)invalid('LEAF_KIND');}
  const visited=new Set(),visiting=new Set();function visit(key){if(visiting.has(key))invalid('CYCLE');if(visited.has(key))return;visiting.add(key);const node=byId.get(key);for(const next of [...children.get(key),...node.depends_on])visit(next);visiting.delete(key);visited.add(key);}for(const node of result)visit(node.id);return result;
 }
-export function normalizeProjectPlan(value){keys(value,['session_id','title','goal','summary','source','nodes','updated_at'],['session_id','title','goal','source','nodes','updated_at']);return{session_id:planSessionId(value.session_id),title:text(value.title,PLAN_LIMITS.title,true),goal:text(value.goal,PLAN_LIMITS.goal,true),summary:text(value.summary??'',PLAN_LIMITS.summary),source:source(value.source),nodes:nodes(value.nodes),updated_at:timestamp(value.updated_at)};}
+function planContent(value){return{title:text(value.title,PLAN_LIMITS.title,true),goal:text(value.goal,PLAN_LIMITS.goal,true),summary:text(value.summary??'',PLAN_LIMITS.summary),source:source(value.source),nodes:nodes(value.nodes)};}
+export function normalizePlanContent(value){keys(value,['title','goal','summary','source','nodes'],['title','goal','source','nodes']);return planContent(value);}
+export function normalizeProjectPlan(value){keys(value,['session_id','title','goal','summary','source','nodes','updated_at'],['session_id','title','goal','source','nodes','updated_at']);return{session_id:planSessionId(value.session_id),...planContent(value),updated_at:timestamp(value.updated_at)};}
 export function emptyProjectPlans(){return{schema_version:1,source:PLAN_SOURCE,updated_at:null,projects:[]};}
 export function validateProjectPlansStore(value){keys(value,['schema_version','source','updated_at','projects'],['schema_version','source','updated_at','projects']);if(value.schema_version!==1||value.source!==PLAN_SOURCE)invalid('STORE_SOURCE');const projects=list(value.projects,PLAN_LIMITS.sessions).map(normalizeProjectPlan);if(new Set(projects.map(p=>p.session_id)).size!==projects.length)invalid('DUPLICATE_SESSION');return{schema_version:1,source:PLAN_SOURCE,updated_at:timestamp(value.updated_at,true),projects};}
 function progress(tasks){const total=tasks.length,completed=tasks.filter(n=>FINISHED.has(n.status)&&n.evidence.length).length;return{completed,total,percent:total?Math.floor(completed*100/total):null,kind:'evidenced_leaf_tasks'};}
@@ -93,7 +95,7 @@ function patchNodes(value){keys(value,['nodes'],['nodes']);const result=list(val
 export async function writeProjectPlan(filename,sessionId,payload,{patch=false,timeoutMs=10000,expectedUpdatedAt}={}){
  const session=planSessionId(sessionId);payloadBytes(payload);let replacement,updates;
  if(expectedUpdatedAt!==undefined)timestamp(expectedUpdatedAt,true);
- if(patch)updates=patchNodes(payload);else{keys(payload,['title','goal','summary','source','nodes'],['title','goal','source','nodes']);replacement=normalizeProjectPlan({...payload,session_id:session,updated_at:now()});}
+ if(patch)updates=patchNodes(payload);else replacement=normalizePlanContent(payload);
  return atomicUpdate(filename,store=>{
   const index=store.projects.findIndex(p=>p.session_id===session);
   const old=store.projects[index];
@@ -101,7 +103,7 @@ export async function writeProjectPlan(filename,sessionId,payload,{patch=false,t
   const updated_at=new Date(Math.max(Date.now(),old?Date.parse(old.updated_at)+1:0)).toISOString();
   let next;
   if(patch){if(!old)invalid('PLAN_NOT_FOUND');const existing=new Map(old.nodes.map(n=>[n.id,n]));for(const change of updates)if(!existing.has(change.id))invalid('NODE_NOT_FOUND');const map=new Map(updates.map(n=>[n.id,n]));next=normalizeProjectPlan({...old,updated_at,nodes:old.nodes.map(node=>map.has(node.id)?{...node,...map.get(node.id)}:node)});}
-  else next={...replacement,updated_at};
+  else next={session_id:session,...replacement,updated_at};
   if(index<0){if(store.projects.length>=PLAN_LIMITS.sessions)invalid('SESSION_CAPACITY');store.projects.push(next);}else store.projects[index]=next;store.updated_at=now();return store;
  },{timeoutMs});
 }

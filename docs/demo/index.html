@@ -46,6 +46,8 @@
           <li><strong>只整理架構：</strong>查看已有的架構，或依這則對話整理出階段、模組和驗收項目。符合條件時，以原對話名稱存回看板卡片。回到看板的 ChatGPT 分頁，在原對話卡片查看架構。Codex 應用程式會保留這則對話，標題加上「[ 回CHATGPT ]」。這次整理不會列在看板的 Codex 工作清單。</li>
           <li><strong>整理架構並實作驗收：</strong>指定本機專案資料夾，已有架構就選一個未驗收項目。尚無架構時，Codex 先整理並找出第一個條件明確且可驗收的項目。整理、實作和測試在同一則 Codex 對話進行，條件不足時會先釐清。這則工作對話的標題會加上「[Chatgpt 轉移 CODEX]」，並列在看板的 Codex 工作清單。</li>
         </ul>
+        <p>在同一台電腦選「整理架構並實作驗收」，Codex 會直接讀取本機看板上的架構。跨電腦時，在 ChatGPT 卡片點「下載架構包」，把 <code>.codex-plan.json</code> 交給接手者。接手者在本機看板點「匯入架構包」，選一個未驗收項目和本機專案資料夾，再點「開啟 Codex」並在桌面 Codex 按送出。</p>
+        <p><a href="architecture-package-example.json" download="architecture-package-example.codex-plan.json">下載「社區圖書交換活動」合成架構包</a></p>
         <p>此公開頁面以合成資料說明流程。實際整理、實作和測試由本機桌面 Codex 處理。</p>
       </details>
       <div class="plan-overview"><h3 id="plan-title"></h3><p id="plan-goal"></p><p id="plan-summary"></p><p id="plan-scope-note" class="plan-scope-note"></p><div id="plan-counts" class="plan-counts"></div><div class="plan-overall"><div class="progress-head"><h3>全專案已列範圍的驗收比例</h3><strong id="plan-percent" class="percentage">範圍待補齊</strong></div><progress id="plan-progress" max="100" aria-label="全專案已列範圍的驗收項目完成比例" hidden></progress><p id="plan-progress-note"></p></div><details id="plan-source-details" class="plan-source-details"><summary>計畫來源與文件</summary><p id="plan-source-label"></p><p id="plan-updated"></p><div id="plan-references" class="plan-references"></div></details></div>
