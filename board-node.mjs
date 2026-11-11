@@ -1,4 +1,4 @@
-/** Bounded, GET-only semantic checkpoint mirror. Node standard library only. */
+/** Bounded loopback board and semantic checkpoint mirror. Node standard library only. */
 import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import http from 'node:http';
@@ -73,7 +73,13 @@ export async function readJSON(filename,limit,missing){let handle;try{handle=awa
 export async function readSemantic(filename){return validateSemanticState(await readJSON(filename,LIMITS.stateBytes,emptyState()));}
 const sleep=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds));
 function alive(pid){try{process.kill(pid,0);return true;}catch(error){return error.code==='EPERM';}}
-export async function lockedUpdate(filename,update,{timeoutMs=10000}={}){
+export function lockedUpdate(filename,update,{timeoutMs=10000}={}){
+ return lockedJsonUpdate(filename,update,{
+  timeoutMs,read:readSemantic,validate:validateSemanticState,maxBytes:LIMITS.stateBytes,
+  tooLarge:'Semantic store full (8MiB); explicitly archive it instead of dropping conversations',
+ });
+}
+export async function lockedJsonUpdate(filename,update,{timeoutMs,read,validate,maxBytes,tooLarge}){
  filename=path.resolve(filename);await fs.mkdir(path.dirname(filename),{recursive:true});const lock=path.join(path.dirname(filename),`.${path.basename(filename)}.node.lock`),nonce=randomUUID(),deadline=Date.now()+timeoutMs;let handle;
  while(!handle){try{handle=await fs.open(lock,'wx',0o600);await handle.writeFile(JSON.stringify({pid:process.pid,nonce,at:now()}));await handle.sync();}catch(error){if(error.code!=='EEXIST')throw error;
    // Serialize stale-lock recovery separately: two recovering writers must
@@ -82,7 +88,7 @@ export async function lockedUpdate(filename,update,{timeoutMs=10000}={}){
    if(Date.now()>=deadline)throw Error('Semantic writer busy; no update was discarded or written');await sleep(25);
  }}
  let temporary;
- try{const current=await readSemantic(filename),next=validateSemanticState(await update(current));const raw=Buffer.from(JSON.stringify(next,null,2)+'\n');if(raw.length>LIMITS.stateBytes)throw Error('Semantic store full (8MiB); explicitly archive it instead of dropping conversations');temporary=path.join(path.dirname(filename),`.${path.basename(filename)}.${randomUUID()}.tmp`);const output=await fs.open(temporary,'wx',0o600);try{await output.writeFile(raw);await output.sync();}finally{await output.close();}await fs.rename(temporary,filename);temporary=null;return next;
+ try{const current=await read(filename),next=validate(await update(current));const raw=Buffer.from(JSON.stringify(next,null,2)+'\n');if(raw.length>maxBytes)throw Error(tooLarge);temporary=path.join(path.dirname(filename),`.${path.basename(filename)}.${randomUUID()}.tmp`);const output=await fs.open(temporary,'wx',0o600);try{await output.writeFile(raw);await output.sync();}finally{await output.close();}await fs.rename(temporary,filename);temporary=null;return next;
  }finally{await handle.close();if(temporary)await fs.unlink(temporary).catch(()=>{});const owner=await readJSON(lock,1024).catch(()=>null);if(owner?.nonce===nonce)await fs.unlink(lock);}
 }
 function legacyState(value){
@@ -122,10 +128,13 @@ export async function mergedState(statePath,legacyPath,observations={projects:[]
 }
 const defaultConfig={schema_version:1,title:'每個聊天室的工作看板',subtitle:'每個對話的需求、目前工作、下一步與成果。',poll_seconds:5,complete_statuses:['done','passed','frozen'],show_agents:true,show_events:true};
 export function validateConfig(v){keys(v,Object.keys(defaultConfig),Object.keys(defaultConfig));if(v.schema_version!==1||!Number.isInteger(v.poll_seconds)||v.poll_seconds<1||v.poll_seconds>60||typeof v.show_agents!=='boolean'||typeof v.show_events!=='boolean')throw Error('Invalid board display configuration');list(v.complete_statuses,8);if(v.complete_statuses.some(s=>!['done','passed','frozen'].includes(s)))throw Error('Source readiness is not completion');return {...v,title:text(v.title,120),subtitle:text(v.subtitle,300)};}
-export async function createBoardServer({root=ROOT,state=path.join(root,'state-v2.json'),summaryState=path.join(root,'conversation-summaries.json'),planState=path.join(root,'project-plans.json'),legacyState:legacy=path.join(root,'state.json'),config=path.join(root,'config.json'),port=8787,instanceId=randomUUID(),observeCodex=true,codexHome=process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),observationProvider,executionProvider}={}){
+export async function createBoardServer({root=ROOT,state=path.join(root,'state-v2.json'),summaryState=path.join(root,'conversation-summaries.json'),planState=path.join(root,'project-plans.json'),legacyState:legacy=path.join(root,'state.json'),config=path.join(root,'config.json'),chatgptPilotState=path.join(root,'.runtime','chatgpt-pilot.json'),chatgptPlanDirectory=path.join(path.dirname(chatgptPilotState),'chatgpt-plans'),port=8787,instanceId=randomUUID(),observeCodex=true,codexHome=process.env.CODEX_HOME??path.join(os.homedir(),'.codex'),observationProvider,executionProvider}={}){
  root=await fs.realpath(root);instanceId=uuid(instanceId);const fingerprint=createHash('sha256').update(root).digest('hex');
  const pathKey=p=>process.platform==='win32'?path.resolve(p).toLowerCase():path.resolve(p);
  if([state,summaryState,legacy].filter(Boolean).some(p=>pathKey(p)===pathKey(planState)))throw Error('Project plans must remain separate from work reports');
+ if([state,summaryState,legacy,planState,config].filter(Boolean).some(p=>pathKey(p)===pathKey(chatgptPilotState)))throw Error('ChatGPT pilot data must use a separate local file');
+ const chatgptPlans=path.resolve(chatgptPlanDirectory);
+ if([state,summaryState,legacy,planState,config,chatgptPilotState].filter(Boolean).some(p=>pathKey(path.dirname(p))===pathKey(chatgptPlans)))throw Error('ChatGPT plans must have a separate local directory');
  if(typeof observeCodex!=='boolean'||typeof codexHome!=='string'||observationProvider!==undefined&&typeof observationProvider!=='function'||executionProvider!==undefined&&typeof executionProvider!=='function')throw Error('Invalid read-only observation configuration');
  let provider=observationProvider;
  async function observations(){if(!observeCodex)return {projects:[],diagnostics:{status:'disabled'}};try{provider??=(await import('./codex-observer.mjs')).observeCodex;const value=await provider({codexHome,maxSessions:LIMITS.sessions,headBytes:131072,tailBytes:131072});return {projects:unique(list(value.projects,LIMITS.sessions).map(observedProject)),diagnostics:value.diagnostics??{}};}catch{return {projects:[],diagnostics:{status:'unavailable'}};}}
@@ -152,15 +161,27 @@ export async function createBoardServer({root=ROOT,state=path.join(root,'state-v
   const count=req.rawHeaders.filter((_,i)=>i%2===0&&req.rawHeaders[i].toLowerCase()==='host').length;const host=(req.headers.host??'').toLowerCase();const realPort=server.address()?.port;
   const finish=(status,message)=>{res.writeHead(status,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store','Connection':'close'});res.end(message);};
   if(count!==1||![`127.0.0.1:${realPort}`,`localhost:${realPort}`].includes(host))return finish(403,'Untrusted local Host');
-  if(req.method!=='GET')return finish(405,'GET only');if((req.url??'').length>2048)return finish(414,'Request path too long');
-  const routes={'/':'index.html','/app.js':'app.js','/styles.css':'styles.css','/plan-handoff.js':'plan-handoff.js'};let data,type;const nonce=randomBytes(18).toString('base64url');
+  const pilotRoute=req.url==='/chatgpt-pilot.json';
+  const chatgptPlanRoute=req.url==='/chatgpt-plan.json'||req.url?.startsWith('/chatgpt-plan.json?');
+  if(req.method!=='GET'&&!pilotRoute&&!chatgptPlanRoute)return finish(405,'GET only');if((req.url??'').length>2048)return finish(414,'Request path too long');
+  const routes={'/':'index.html','/app.js':'app.js','/styles.css':'styles.css','/plan-handoff.js':'plan-handoff.js'};let data,type,statusCode=200;const nonce=randomBytes(18).toString('base64url'),extraHeaders={};
   try{
-   if(req.url==='/healthz'){data=JSON.stringify({status:'ok',service:'codex-local-board',version:2,pid:process.pid,root_fingerprint:fingerprint,instance_id:instanceId});type='application/json; charset=utf-8';}
+   if(pilotRoute||chatgptPlanRoute){
+    const {handleChatgptPilot,handleChatgptPlan}=await import('./chatgpt-pilot.mjs');
+    const localOrigin=`http://${host}`;
+    const result=pilotRoute
+     ?await handleChatgptPilot(req,chatgptPilotState,localOrigin)
+     :await handleChatgptPlan(req,chatgptPilotState,chatgptPlans,localOrigin);
+    statusCode=result.status;data=JSON.stringify(result.body);type='application/json; charset=utf-8';
+    extraHeaders['Cross-Origin-Resource-Policy']='same-origin';
+    if(result.allow)extraHeaders.Allow=result.allow;
+   }
+   else if(req.url==='/healthz'){data=JSON.stringify({status:'ok',service:'codex-local-board',version:2,pid:process.pid,root_fingerprint:fingerprint,instance_id:instanceId});type='application/json; charset=utf-8';}
    else if(req.url==='/state.json'){data=JSON.stringify(await presentedState());type='application/json; charset=utf-8';}
    else if(req.url==='/config.json'){data=JSON.stringify(validateConfig(await readJSON(config,LIMITS.configBytes,defaultConfig)));type='application/json; charset=utf-8';}
    else if(Object.hasOwn(routes,req.url)){const target=await fs.realpath(path.join(root,'web',routes[req.url]));if(!target.startsWith(root+path.sep))throw Error('Static source escaped root');const stat=await fs.stat(target);if(stat.size>512*1024)throw Error('Static source too large');data=await fs.readFile(target);type=req.url==='/'?'text/html; charset=utf-8':['/app.js','/plan-handoff.js'].includes(req.url)?'text/javascript; charset=utf-8':'text/css; charset=utf-8';if(req.url==='/')data=Buffer.from(data.toString('utf8').replaceAll('__BOARD_NONCE__',nonce));}
    else return finish(404,'Fixed route not found');
-   res.writeHead(200,{'Content-Type':type,'Content-Length':Buffer.byteLength(data),'Cache-Control':'no-store','Connection':'close','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'self'; connect-src 'self'; img-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`});res.end(data);
+   res.writeHead(statusCode,{'Content-Type':type,'Content-Length':Buffer.byteLength(data),'Cache-Control':'no-store','Connection':'close','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':`default-src 'none'; script-src 'nonce-${nonce}'; style-src 'self'; connect-src 'self'; img-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,...extraHeaders});res.end(data);
   }catch{return finish(503,'Short local checkpoint temporarily unavailable');}
  });server.requestTimeout=5000;server.headersTimeout=5000;server.maxHeadersCount=32;server.maxConnections=32;server.on('connection',socket=>socket.setTimeout(5000,()=>socket.destroy()));await new Promise((resolve,reject)=>{server.once('error',reject);server.listen({host:'127.0.0.1',port,exclusive:true},resolve);});return server;
 }

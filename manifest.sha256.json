@@ -31,6 +31,7 @@
     "agentview_zh_tw.py",
     "board-node.mjs",
     "board.py",
+    "chatgpt-pilot.mjs",
     "codex-execution.mjs",
     "codex-observer.mjs",
     "codex-titles.mjs",
@@ -56,6 +57,8 @@
     "sync-all.mjs",
     "tests/Test-Scripts.ps1",
     "tests/board-node.test.mjs",
+    "tests/chatgpt-pilot.test.mjs",
+    "tests/chatgpt-plan.test.mjs",
     "tests/codex-execution.test.mjs",
     "tests/codex-titles.test.mjs",
     "tests/execution-merge.test.mjs",
@@ -143,8 +146,8 @@
     },
     {
       "path": "README.md",
-      "size": 39177,
-      "sha256": "d96a46391e35d4d9957799430df616855efbf0946b199b6f9489287e83f6f35b"
+      "size": 41353,
+      "sha256": "870fbfbb720a631b3d14693ce7e318f892b609d7688b305e7150be242d3c4fba"
     },
     {
       "path": "Start-Board.cmd",
@@ -188,13 +191,18 @@
     },
     {
       "path": "board-node.mjs",
-      "size": 28049,
-      "sha256": "ba506845a5047be378a8be0b06dcd2e2026902f0d9fc612bacf176fcd5e15045"
+      "size": 29698,
+      "sha256": "52f17ed1aaf37a1f345391d3f4728928e4a611ed6412ba87aab9b9b5c8bb2f9c"
     },
     {
       "path": "board.py",
       "size": 7503,
       "sha256": "96af2eb7ef5658f3d45ee8afce66f43f2eec7b61d510bc653b75e0d41727940f"
+    },
+    {
+      "path": "chatgpt-pilot.mjs",
+      "size": 12439,
+      "sha256": "b3d84b1fd67f75ab86f290063ec4beef3f7ec5f3f4bd9530cc61eaaf3392cd9e"
     },
     {
       "path": "codex-execution.mjs",
@@ -233,8 +241,8 @@
     },
     {
       "path": "docs/demo/app.js",
-      "size": 38498,
-      "sha256": "b83f54b098ddf7e7800df4a6ae52c3964d63bab54554dc2e577ac61b2b87aa2f"
+      "size": 39867,
+      "sha256": "4342308498f50afa9506fda0be121d8cf7cd6a788dea38dab9187a5c4c4b0eb8"
     },
     {
       "path": "docs/demo/config.json",
@@ -243,8 +251,8 @@
     },
     {
       "path": "docs/demo/index.html",
-      "size": 8886,
-      "sha256": "786967adeac0a0b7210ecb7149ff7e47097bebe943276ecdcb64d7ebf0c012cb"
+      "size": 9646,
+      "sha256": "733dc21b6734276b9162d1ac1bddda2ba3ecb4710d7c6ab56d18b23605f2234d"
     },
     {
       "path": "docs/demo/plan-handoff.js",
@@ -253,18 +261,18 @@
     },
     {
       "path": "docs/demo/state.json",
-      "size": 20493,
-      "sha256": "bed315ddc63131c0a06de444d65ea622d8ed2863a08f09d26a3de39665fe1e60"
+      "size": 24154,
+      "sha256": "29240363f619dc5ea155cdf1b5236e86690f961d9f09ebce0df1d7cd20b4533d"
     },
     {
       "path": "docs/demo/styles.css",
-      "size": 22029,
-      "sha256": "2bb2f686d309e86baed625ecb6c416b2baed7c867347803e89a319a6bb9ea74c"
+      "size": 22611,
+      "sha256": "15cc6242c9f4969fc0c985d72dc616732d4ee3f2a291429d4479e62341c428ed"
     },
     {
       "path": "docs/index.html",
-      "size": 2539111,
-      "sha256": "18713fb73333f3adc74e7b979ef5b0f8836edd0a9aa79428fae550da28e41480"
+      "size": 2540007,
+      "sha256": "6a85fc8153aa65ded99727b2e16d418c6265f26d60b16b2ae1604f6b52c87a13"
     },
     {
       "path": "install-agent-guidance.mjs",
@@ -273,8 +281,8 @@
     },
     {
       "path": "make_portable.py",
-      "size": 10568,
-      "sha256": "dae69c558218259758e893b346c8ebf5045e53e31b0db4f716a23ec8c6d1f609"
+      "size": 10589,
+      "sha256": "f39e7416cfc92e83842eeca38e8ddcff3bcc0896d7c3f9ba4e03b4620fe3522b"
     },
     {
       "path": "open-board.mjs",
@@ -293,8 +301,8 @@
     },
     {
       "path": "project-plan.mjs",
-      "size": 14061,
-      "sha256": "e29f75f46876542d16de171ccca23461f32739401008fc7a1d3aa2aac6e13463"
+      "size": 14892,
+      "sha256": "df648640cc9aeb5b39cf580ea545eca5dd5755a50eec8b245b0eb1eb5d2f9017"
     },
     {
       "path": "runtime/LICENSE",
@@ -332,6 +340,16 @@
       "sha256": "9373e068248122e7ec3599a0564d99c45e715c5399bb2ff714fd8a5676947825"
     },
     {
+      "path": "tests/chatgpt-pilot.test.mjs",
+      "size": 8247,
+      "sha256": "ad734edd876e7ac68245dbad1a7150a41f9cede6a595e0ecf8eeb06b92ec53c1"
+    },
+    {
+      "path": "tests/chatgpt-plan.test.mjs",
+      "size": 8377,
+      "sha256": "e8c3bf7e6c64b4840c2892f20371f4cb614398c4499e4f28f1ec9f59e94fc710"
+    },
+    {
       "path": "tests/codex-execution.test.mjs",
       "size": 9299,
       "sha256": "114a8b7dda132b219ae5bdfbf1b6fd3552de8e63415e25af277d2007a8f53009"
@@ -363,8 +381,8 @@
     },
     {
       "path": "tests/private-access.test.mjs",
-      "size": 17296,
-      "sha256": "6782b4df8e99ab2b3ee111a574b4f7621d3ce56bc7f302642927426a85db4c48"
+      "size": 17489,
+      "sha256": "a7849160b413b90acebeafbc059e12e47898fbf4d81162ae90b72dc439cad809"
     },
     {
       "path": "tests/project-plan.test.mjs",
@@ -538,13 +556,13 @@
     },
     {
       "path": "web/app.js",
-      "size": 38546,
-      "sha256": "ed6e4bd295a830da877fa0eb26d0d2886420d82ea7657fa544ca4b36c42277b2"
+      "size": 77101,
+      "sha256": "014b2b04238117ded2b87bfd1c8184a9b4183aeb0688c170ab67f943e7a4be99"
     },
     {
       "path": "web/index.html",
-      "size": 7941,
-      "sha256": "5ba592da9e3d78a30f0cf740224d0f36d81f89b39b9b280f279b296d4a3a432b"
+      "size": 11152,
+      "sha256": "a3bf0d1c05eaeec54826ffbf5624d4cdb5d25f074397e6a94f18155e3f6e51c4"
     },
     {
       "path": "web/plan-handoff.js",
@@ -553,13 +571,13 @@
     },
     {
       "path": "web/styles.css",
-      "size": 21408,
-      "sha256": "3a1c577c3693224ec45ee5b419d97c583f77a9c21a5f66a8881269f6303363c1"
+      "size": 28329,
+      "sha256": "4a4420d467329fc5641dfe470c801b9c0fceb45cd2da99c4953b16cc4aa57131"
     },
     {
       "path": "使用說明.txt",
-      "size": 7384,
-      "sha256": "1c8b7bb62946297a22f2b93d36f6266d68957f39b435d59aee1ceeda0001eddd"
+      "size": 8149,
+      "sha256": "f836c77254b856f6b0f4080f71522c0cb72ef41ebb6167be134ab291049132cc"
     }
   ],
   "private_mobile_entry": "Open-Phone-Board.cmd",

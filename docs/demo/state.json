@@ -631,5 +631,99 @@
         "percent": null
       }
     }
+  ],
+  "chatgpt_projects": [
+    {
+      "id": "demo-chatgpt-book-exchange",
+      "session_id": "demo-chatgpt-book-exchange",
+      "platform": "chatgpt",
+      "demo": true,
+      "title": "社區圖書交換活動",
+      "goal": "規劃一場半天的社區圖書交換活動。",
+      "phase": "ChatGPT 合成範例・已有架構",
+      "current": "確認活動範圍，開始安排報到與交換流程。",
+      "next": "核對活動流程表，再確認志工分工。",
+      "completed": [
+        {
+          "title": "確認活動的時間與參與方式",
+          "detail": "合成示例：流程草案已列出時間、入場方式與交換規則。",
+          "evidence": [
+            { "label": "合成示例・活動範圍核對紀錄" }
+          ]
+        }
+      ],
+      "plan": {
+        "session_id": "demo-chatgpt-book-exchange",
+        "title": "社區圖書交換活動",
+        "goal": "把活動規劃整理成可逐項核對的交付清單。",
+        "summary": "計畫名稱沿用示範對話的原名。",
+        "source": {
+          "kind": "generated",
+          "label": "依公開展示用的合成情境整理",
+          "references": []
+        },
+        "updated_at": null,
+        "progress": { "completed": 1, "total": 2, "percent": 50 },
+        "nodes": [
+          {
+            "id": "demo-chatgpt-planning-phase",
+            "parent_id": null,
+            "title": "活動籌備",
+            "kind": "phase",
+            "status": "in_progress",
+            "detail": "先確認活動範圍，再安排現場流程。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": { "completed": 1, "total": 2, "percent": 50 }
+          },
+          {
+            "id": "demo-chatgpt-activity-module",
+            "parent_id": "demo-chatgpt-planning-phase",
+            "title": "活動流程",
+            "kind": "module",
+            "status": "in_progress",
+            "detail": "確認時間、入場、報到和交換方式。",
+            "evidence": [],
+            "depends_on": [],
+            "progress": { "completed": 1, "total": 2, "percent": 50 }
+          },
+          {
+            "id": "demo-chatgpt-scope-check",
+            "parent_id": "demo-chatgpt-activity-module",
+            "title": "確認活動的時間與參與方式",
+            "kind": "task",
+            "status": "passed",
+            "detail": "流程草案已列出時間、入場方式與交換規則。",
+            "evidence": [
+              { "label": "合成示例・活動範圍核對紀錄" }
+            ],
+            "depends_on": [],
+            "progress": { "completed": 1, "total": 1, "percent": 100 }
+          },
+          {
+            "id": "demo-chatgpt-flow-check",
+            "parent_id": "demo-chatgpt-activity-module",
+            "title": "核對報到與圖書交換流程",
+            "kind": "task",
+            "status": "pending",
+            "detail": "等流程表和志工分工確認後再驗收。",
+            "evidence": [],
+            "depends_on": ["demo-chatgpt-scope-check"],
+            "progress": { "completed": 0, "total": 1, "percent": 0 }
+          }
+        ]
+      }
+    },
+    {
+      "id": "demo-chatgpt-rainy-day-ideas",
+      "session_id": "demo-chatgpt-rainy-day-ideas",
+      "platform": "chatgpt",
+      "demo": true,
+      "title": "雨天室內活動點子",
+      "goal": "隨手記下幾個雨天室內活動的點子。",
+      "phase": "ChatGPT 合成範例・尚未建立架構",
+      "current": "一般點子交流，沒有約定交付項目。",
+      "next": "有明確專案時，再建立專案架構。"
+    }
   ]
 }

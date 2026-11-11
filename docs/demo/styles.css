@@ -33,3 +33,32 @@
 /* Public static hosting disclosure; the board layout is otherwise unchanged. */
 .demo-disclosure{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 30px;border-bottom:1px solid #3d5657;background:#19302c;font-size:12px}.demo-disclosure strong{color:var(--teal);font-size:13px}.demo-disclosure span{flex:1;color:var(--text)}.demo-disclosure nav{display:flex;gap:16px}.demo-disclosure a{white-space:nowrap}
 @media(max-width:580px){.demo-disclosure{padding:12px 16px;align-items:flex-start}.demo-disclosure span{flex-basis:100%;order:1}.demo-disclosure nav{font-size:12px}}
+.platform-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.platform-switch button {
+  padding: 7px 10px;
+  font-size: 13px;
+}
+.platform-switch button[aria-pressed="true"] {
+  background: #203943;
+  border-color: #578170;
+  color: var(--teal);
+}
+.demo-chatgpt-workflow {
+  margin: 0 16px 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 13px;
+}
+.demo-chatgpt-workflow summary {
+  cursor: pointer;
+  color: var(--teal);
+}
+.demo-chatgpt-workflow p {
+  margin-top: 7px;
+}

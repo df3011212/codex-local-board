@@ -30,6 +30,7 @@ GitHub Pages只是公開示範，不是你的私人看板入口；私人網址�
 官方私人Serve：https://tailscale.com/docs/features/tailscale-serve
 
 二、如何看進度
+Codex 對話
 左欄使用 Codex 原始對話名稱，每列一行，可搜尋完整標題。
 尚未取得原生名稱的報告放在「其他同步任務」，預設收合。
 右側依序查看工作目標、目前工作、下一步、成果、驗收關卡與工作分工。
@@ -43,7 +44,13 @@ GitHub Pages只是公開示範，不是你的私人看板入口；私人網址�
 轉圈來源是已運行 Agent View 的唯讀回合狀態，不另外呼叫 AI、不使用 Codex 額度。
 未使用這個選配來源時，工作摘要仍可正常顯示；本看板不自動安裝外掛或更改信任。
 
-三、首次整理既有聊天室
+ChatGPT 對話（限同一台電腦開啟本機看板）
+在左欄切換 Codex／ChatGPT。已匯入的 ChatGPT 對話會保留原名，可搜尋或篩選封存狀態。
+請已登入的桌面 Codex 讀取所需的完整 ChatGPT 對話索引，再依 README 使用 chatgpt-pilot.mjs import 匯入。匯入資料只需對話 ID、名稱及封存狀態。
+對話尚無架構時，點「用 Codex 自動整理」，並在開啟的桌面 Codex 按送出。Codex 逐則判斷是否有可整理的專案；資料足夠時，計畫與整理對話沿用原 ChatGPT 名稱。
+也可以直接建立或編輯架構、更新手動進度，或開啟原 ChatGPT 對話。私人索引、進度和計畫都留在 .runtime，不要上傳。
+
+三、首次整理既有 Codex 聊天室
 看板開啟後，雙擊 Sync-All-Chats.cmd。
 它會使用本機已登入 Codex 的可用額度，啟動一次明確同步，整理可取得的公開摘要。
 整理結果存入私人 conversation-summaries.json；依視窗結果確認是否成功。
@@ -92,7 +99,7 @@ Open-All-Agents.cmd 開啟另附的 Codex Agent View。
 它的工具事件不等於主要看板的驗收成果。
 
 七、公開與授權
-不要上傳執行中的 state-v2.json、conversation-summaries.json、state.json、config.json、.runtime、私人備份或憑證。
+不要上傳執行中的 state-v2.json、conversation-summaries.json、project-plans.json、state.json、config.json、.runtime、私人備份或憑證。
 原創看板及翻譯補丁：LICENSE（MIT）。
 Node.js 與其元件：runtime/LICENSE。
 Codex Agent View：vendor/codex-agent-view/LICENSE 與 NOTICE（Apache-2.0）。

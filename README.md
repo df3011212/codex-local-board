@@ -2,9 +2,9 @@
 
 [線上介紹與成果圖](https://df3011212.github.io/codex-local-board/) · [公開互動示範](https://df3011212.github.io/codex-local-board/demo/)
 
-線上示範使用固定公開資料，可以直接試用介面；讀取自己的 Codex 工作仍使用下方本機版。GitHub Pages 不會讀取訪客電腦上的聊天室或檔案，也不會另外呼叫 AI。
+公開互動示範可切換 Codex／ChatGPT 並查看合成的專案架構。自己的對話資料由本機版讀取與保存。
 
-以繁體中文整理每個工作聊天室的**目標、目前工作、下一步、已完成成果、可驗證關卡與分工**。主要入口是 Node.js 標準函式庫的唯讀本機看板；由正在工作的 Codex 整理短報告，不必每次刷新另呼模型分析日誌。
+以繁體中文整理每個工作聊天室的**目標、目前工作、下一步、已完成成果、可驗證關卡與分工**。主要入口是使用 Node.js 標準函式庫的本機看板。工作中的 Codex 回報進度，已匯入的 ChatGPT 對話可個別查看與整理。
 
 本倉庫保留原創來源、測試與 Windows 可攜入口，也保留既有 `runtime/` Node.js 及 `vendor/codex-agent-view/` 套件與完整授權。一般使用者解壓縮後直接開啟看板；不需要先裝 Python 或 npm。本專案的公開範例不含私人對話、帳號或特定使用者路徑。
 
@@ -12,6 +12,7 @@
 |---|---|---|
 | 本專案主要語意看板 | 當前 Codex 模型依指導執行 `agent_report.mjs` 鏡像事實 | 每聊天室的清楚目標／目前／下一步／成果、明確關卡進度與實際分工 |
 | 既有對話的整理報告 | Codex 讀取可取得的公開對話摘要後，明確整理並標示來源 | 已知需求、最近進展、已回報成果與後續安排；未重測的成果會註明 |
+| ChatGPT 對話工作區 | 桌面 Codex 按需取得索引；使用者可手動編輯或整理一則對話 | 原始對話名稱、返回原對話、手動進度與專案架構 |
 | Python v1 相容檢查點 | 你或代理明確執行 `update_state.py` 登記 | 原有多專案檢查點；Node 看板可合併唯讀呈現 |
 | 外部 Agent View（進階備選） | 經 Codex 原生載入、授權後收到的全域 hooks | 新工作與子代理的事件、工具活動及許可狀態 |
 
@@ -25,6 +26,24 @@
 2. 雙擊 `Open-Board.cmd`。使用相對路徑的 `runtime/node.exe`，來源版才會尋找已安裝的 Node。
 3. 預設開啟 `http://127.0.0.1:8787`。左側選擇對話，右側直接看目標、目前工作、下一步、成果及分工。
 4. 重複開啟會沿用本資料夾的看板；使用 `Close-Board.cmd` 關閉它，狀態保留。
+
+<a id="chatgpt-local"></a>
+
+### 在本機看板切換 Codex 與 ChatGPT
+
+在同一台電腦開啟看板，使用左側 **Codex／ChatGPT** 切換。兩邊各有對話清單，共用右側工作區與專案架構樹。ChatGPT 清單沿用原始名稱，支援搜尋及篩選封存狀態。選取一則對話後，可開啟原對話、更新進度，或建立並編輯該對話的架構。
+
+1. **匯入清單。** 在已登入的桌面 Codex，請它用桌面對話工具 `list_threads`（`mode: "history"`、`source: "chatgpt"`）分頁讀取未封存及已封存的索引。保留要顯示的完整清單，將各筆對話的 `id`、`title`、`archived` 組成 `{ "chats": [...] }`，交給同一份看板的 `chatgpt-pilot.mjs import`。
+2. **整理指定對話。** 選擇尚無架構的 ChatGPT 對話，在「專案架構總覽」點 **用 Codex 自動整理**。桌面 Codex 會開啟已填好提示的新對話，按 **送出** 後才會讀取指定對話已送出的訊息。
+3. **查看結果。** 有明確專案目標及可驗證關卡才會建立架構，計畫與新開的 Codex 整理對話使用原 ChatGPT 對話名稱。資料不足時保留空白，已有架構可手動編輯。切回看板即可查看整理結果。
+
+已有完整索引 JSON 時，可在看板資料夾執行以下命令。`--file` 接收 UTF-8 JSON，`--stdin` 可改由標準輸入傳入同樣資料。
+
+```powershell
+.\runtime\node.exe .\chatgpt-pilot.mjs import --file "C:\path\to\chatgpt-index.json"
+```
+
+CLI 只匯入你提供的索引，每次以該份清單為準。重新匯入時，對話 ID 相同的進度與架構會保留。索引與手動進度存放在 `.runtime/chatgpt-pilot.json`，架構保存在 `.runtime/chatgpt-plans/`，整理結果只保存必要的摘要、關卡和證據。更新這份索引不會逐則閱讀對話；架構整理目前由使用者逐則發起，需要桌面 Codex 提供對話存取功能。ChatGPT 清單與寫入功能僅在本機電腦的看板可用。
 
 <a id="phone-private-access"></a>
 
@@ -55,7 +74,7 @@
 
 官方參考：[Windows 安裝與登入](https://tailscale.com/docs/install/windows)、[私人 Serve](https://tailscale.com/docs/features/tailscale-serve)、[HTTPS 與憑證名稱](https://tailscale.com/docs/how-to/set-up-https-certificates)。
 
-### 首次補齊既有聊天室
+### 首次補齊既有 Codex 聊天室
 
 開啟主要看板後，雙擊 `Sync-All-Chats.cmd`。它會明確啟動一次本機 Codex，讀取可取得的公開對話摘要，整理各聊天室的目標、目前工作、下一步、已回報成果及可核對分工，寫入私人 `conversation-summaries.json`。
 
@@ -89,7 +108,7 @@
 node board-node.mjs serve --root . --state ./state-v2.json --summary-state ./conversation-summaries.json --legacy-state ./state.json --config ./config.json --port 8787 --open
 ```
 
-新語意資料存放 `state-v2.json`，與 Python v1 的 `state.json` 分開；不把 v2 欄位塞入舊嚴格結構。頁面每五秒重讀，HTTP 只有固定唯讀路由，沒有網路寫入 API。
+Codex 語意資料存放 `state-v2.json`，與 Python v1 的 `state.json` 分開。頁面每五秒重讀 Codex 進度。ChatGPT 卡片及架構經由本機同來源路由保存。
 
 對話名稱沿用 Codex 原始字樣，從本機 `CODEX_HOME/session_index.jsonl` 的最新 `thread_name` 唯讀取得；在 Codex 重新命名後，看板後續刷新會跟著更新，不自行改寫儲存中的語意報告。關閉觀察來源時也不讀這份名稱索引。
 
@@ -361,7 +380,7 @@ python agentview_zh_tw.py --apply
 
 ## 本機範圍與資料限制
 
-伺服器只綁定 `127.0.0.1`，僅接受符合實際連接埠的 localhost／127.0.0.1 Host；只開放固定 GET 路由。沒有網路寫入 API、目錄瀏覽或任意檔案下載，其他方法拒絕。這不是公開網站伺服器；同一台電腦上的其他程序仍可能讀取本機資料，所以請勿在檢查點放密碼或機密。
+伺服器只綁定 `127.0.0.1`，僅接受符合實際連接埠的 localhost／127.0.0.1 Host。看板使用固定讀取路由，ChatGPT 卡片及架構另有固定的本機同來源 `PUT` 路由。Tailscale 手機橋接只轉送指定的唯讀路由。同一台電腦上的其他程序仍可能讀取本機資料，請將密碼或機密存放在適合的工具。
 
 Node v2 每份語意狀態最多 8 MiB、500 個聊天室；單次報告最多 64 KiB，每聊天室最多 200 個關卡／32 個分工／30 筆事件／12 個群組，證據及文字另有限長。一次性整理另有上述 50 對話與輸入容量限制。Python v1 相容狀態最多 256 KiB、20 個專案，每專案 200 個關卡／32 個分工／30 筆事件。過大、非法 JSON 或結構不符時拒絕，不偷偷截斷關卡；各聊天室事件只保留最近三十筆。
 
@@ -385,6 +404,7 @@ node --test tests/test_observer.mjs
 node --test tests/summary-merge.test.mjs
 node --test tests/sync-all.test.mjs
 node --test tests/private-access.test.mjs
+node --test tests/chatgpt-pilot.test.mjs tests/chatgpt-plan.test.mjs
 ```
 
 Windows PowerShell 5.1 的解析及真實程序啟停測試：

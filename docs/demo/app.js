@@ -119,15 +119,15 @@ function renderSuggestions(project){
     if(button.getAttribute("data-suggestion-id")===focused)restoreFocus=button;card.append(body,button);return card;}):[element("p","尚未收到此對話 Codex 明確回報的建議。","empty")]));restoreFocus?.focus({preventScroll:true});
 }
 function renderProjectPlan(project){
-  const plan=projectPlan(project),key=project.id||"empty";
+  const plan=projectPlan(project),key=project.id||"empty",chatgpt=project.platform==="chatgpt";
   if(!planUI.has(key))planUI.set(key,{search:"",unfinished:false,open:new Map(),filteredOpen:new Map(),filterKey:"",handoff:null,handoffControls:new Map()});
   const ui=planUI.get(key),host=query("plan-tree"),search=query("plan-search"),unfinished=query("plan-unfinished");
   updatePlanHandoffContext(project,plan,key,ui);
   if(search.value!==ui.search)search.value=ui.search;unfinished.checked=ui.unfinished;
   search.oninput=()=>{ui.search=search.value;renderProjectPlan(project);};unfinished.onchange=()=>{ui.unfinished=unfinished.checked;renderProjectPlan(project);};
-  query("plan-title").textContent=plan.title;query("plan-goal").textContent=plan.goal||"完整專案目標尚待同步。";query("plan-summary").textContent=plan.summary;query("plan-summary").hidden=!plan.summary;
-  query("plan-source-kind").textContent=plan.full?({document:"依開發文件整理",generated:"公開示範計畫",reported:"已回報計畫"}[plan.source.kind]):"部分範圍";
-  query("plan-scope-note").textContent=plan.full?"以下是此對話已列出的專案範圍；與下方目前工作關卡分開計算，單次交付不代表整個專案完成。":"依已回報關卡建立，完整範圍待 Codex 補齊；下列只是目前已知的部分工作，不能視為完整專案架構。";
+  query("plan-title").textContent=chatgpt&&!plan.full?"尚未建立架構":plan.title;query("plan-goal").textContent=plan.goal||"完整專案目標尚待同步。";query("plan-summary").textContent=plan.summary;query("plan-summary").hidden=!plan.summary;
+  query("plan-source-kind").textContent=plan.full?({document:"依開發文件整理",generated:"公開示範計畫",reported:"已回報計畫"}[plan.source.kind]):chatgpt?"尚未建立":"部分範圍";
+  query("plan-scope-note").textContent=plan.full?"以下是此對話已列出的專案範圍；與下方目前工作關卡分開計算，單次交付不代表整個專案完成。":chatgpt?"這個示範對話沒有明確專案，架構維持空白。":"依已回報關卡建立，完整範圍待 Codex 補齊；下列只是目前已知的部分工作，不能視為完整專案架構。";
   query("plan-counts").replaceChildren(...["phase","module","task"].map(kind=>element("span",plan.nodes.filter(node=>node.kind===kind).length+" "+(plan.full?PLAN_KIND_LABELS[kind]:kind==="module"?"關卡群組":PLAN_KIND_LABELS[kind]),"scope-count")));
   const overall=plan.progress;query("plan-percent").textContent=!plan.full?"範圍待補齊":overall.percent===null?"比例未知":overall.percent+"%";const bar=query("plan-progress");bar.hidden=!plan.full||overall.percent===null;bar.value=overall.percent??0;
   query("plan-progress-note").textContent=!plan.full?"完整專案範圍尚待補齊，暫不計算全專案比例。":overall.percent===null?"尚未提供可確認的全專案驗收比例，不以目前工作的比例代替。":overall.completed+" / "+overall.total+" 個驗收項目完成並附證據；階段與模組不重複計數。";
@@ -143,21 +143,26 @@ function renderProjectPlan(project){
   function branch(node,depth){const box=element("details",undefined,"plan-node kind-"+node.kind),head=element("summary"),title=element("span",node.title,"plan-node-title"),meta=element("span",undefined,"plan-node-meta"),body=element("div",undefined,"plan-node-body"),children=plan.children.get(node.id)||[],unverified=COMPLETE_STATUSES.has(node.status)&&!evidenceRows(node.evidence).length,p=node.progress;box.setAttribute("data-plan-node",node.id);head.setAttribute("data-plan-focus",node.id);restore.set(node.id,head);meta.append(element("span",!plan.full&&node.kind==="module"?"關卡群組":PLAN_KIND_LABELS[node.kind],"plan-kind"));
     if(node.kind==="task")meta.append(statusBadge(node.status,unverified));else{const badge=element("span",p.percent===null?"子項驗收比例未知":"子項已驗收 "+p.completed+" / "+p.total,"status "+(p.percent===100?"passed":p.completed>0?"in_progress":"pending"));meta.append(badge);}
     if(p.percent!==null)meta.append(element("span",node.kind==="task"?"驗收 "+p.completed+" / "+p.total+" · "+p.percent+"%":p.percent+"%","plan-node-progress"));else meta.append(element("span","比例未知","plan-node-progress"));head.append(title,meta);box.append(head);if(node.detail)body.append(element("p",node.detail));
-    if(node.depends_on.length){const names=node.depends_on.map(id=>plan.byId.get(id)?.title||"依賴內容待同步");body.append(element("p","前置依賴："+names.join("、"),"plan-dependencies"));}appendEvidence(body,node.evidence);if(!node.detail&&!node.depends_on.length&&!evidenceRows(node.evidence).length)body.append(element("p","尚未補充說明或驗收證據。"));body.append(planHandoffControls(node,key,ui,restore));box.append(body);
+    if(node.depends_on.length){const names=node.depends_on.map(id=>plan.byId.get(id)?.title||"依賴內容待同步");body.append(element("p","前置依賴："+names.join("、"),"plan-dependencies"));}appendEvidence(body,node.evidence);if(!node.detail&&!node.depends_on.length&&!evidenceRows(node.evidence).length)body.append(element("p","尚未補充說明或驗收證據。"));if(!chatgpt)body.append(planHandoffControls(node,key,ui,restore));box.append(body);
     if(children.some(child=>included.has(child.id))){const nested=element("div",undefined,"plan-children");nested.append(...children.filter(child=>included.has(child.id)).map(child=>branch(child,depth+1)));box.append(nested);}
     const openState=filtered?ui.filteredOpen:ui.open;box.open=openState.has(node.id)?openState.get(node.id):filtered||depth===0&&node.kind==="phase";box.ontoggle=()=>{openState.set(node.id,box.open);};return box;
   }
-  host.setAttribute("data-plan-signature",signature);host.replaceChildren(...(included.size?plan.roots.filter(node=>included.has(node.id)).map(node=>branch(node,0)):[element("p",!plan.nodes.length?"尚未回報專案計畫或驗收關卡。":filtered?"沒有符合的驗收項目，請調整搜尋或篩選。":"尚未回報可呈現的驗收項目。","empty")]));showPlanHandoff(ui);host.scrollTop=scrollTop;if(focused)restore.get(focused)?.focus({preventScroll:true});
+  host.setAttribute("data-plan-signature",signature);host.replaceChildren(...(included.size?plan.roots.filter(node=>included.has(node.id)).map(node=>branch(node,0)):[element("p",!plan.nodes.length?(chatgpt?"目前沒有可顯示的專案節點。":"尚未回報專案計畫或驗收關卡。"):filtered?"沒有符合的驗收項目，請調整搜尋或篩選。":"尚未回報可呈現的驗收項目。","empty")]));showPlanHandoff(ui);host.scrollTop=scrollTop;if(focused)restore.get(focused)?.focus({preventScroll:true});
 }
 function render(configValue,state,preferredId,options={}){
+  const chatgpt=options.platform==="chatgpt";
   const focusedConversation=document.activeElement?.getAttribute?.("data-project-id");let restoreFocus=null;
-  const config={...DEFAULT_CONFIG,...configValue},statuses=rows(config.complete_statuses).filter(status=>COMPLETE_STATUSES.has(status)),projects=rows(state.projects||state.sessions).map(project=>normalizeProject(project,state)),navigation=conversationGroups(projects,state),selected=projects.find(project=>project.id===preferredId)||navigation.main[0]||projects[0],current=selected||normalizeProject({id:"",title:"尚未同步任何對話",groups:[],tasks:[],agents:[],events:[]},state),sync=syncInfo(current,Date.now(),Math.min(60,Math.max(1,Number(config.poll_seconds)||5))),execution=executionInfo(current,options.runtimeUnavailable===true),filter=text(options.search).toLowerCase();
+  const config={...DEFAULT_CONFIG,...configValue},statuses=rows(config.complete_statuses).filter(status=>COMPLETE_STATUSES.has(status)),projects=rows(chatgpt?state.chatgpt_projects:state.projects||state.sessions).map(project=>normalizeProject(project,state)),navigation=conversationGroups(projects,state),selected=projects.find(project=>project.id===preferredId)||navigation.main[0]||projects[0],current=selected||normalizeProject({id:"",title:"尚未同步任何對話",groups:[],tasks:[],agents:[],events:[]},state),sync=syncInfo(current,Date.now(),Math.min(60,Math.max(1,Number(config.poll_seconds)||5))),execution=executionInfo(current,options.runtimeUnavailable===true),filter=text(options.search).toLowerCase();
   document.title=config.title;query("title").textContent=config.title;query("subtitle").textContent=config.subtitle;query("demo").textContent=state.demo?"實際介面・示範資料":"固定示範資料";query("conversation-count").textContent=String(navigation.main.length);
+  query("conversation-heading").textContent=chatgpt?"ChatGPT 對話":"對話";
+  query("demo-chatgpt-workflow").hidden=!chatgpt;
+  query("demo-suggestions").hidden=chatgpt;
+  query("demo-plan-handoff-policy").hidden=chatgpt;
   const select=query("project");select.replaceChildren(...projects.map(project=>{const option=element("option",project.title);option.value=project.id;return option;}));select.disabled=!selected;select.value=selected?.id||"";
   function renderConversations(id,projectRows){
     const visible=projectRows.filter(project=>project.title.toLowerCase().includes(filter)),host=query(id);
     host.className="conversation-list"+(filter?" filtered":"");
-    host.replaceChildren(...(visible.length?visible.map(project=>{const button=element("button",undefined,"conversation"+(project.id===current.id?" selected":"")),activity=executionInfo(project,options.runtimeUnavailable===true);button.type="button";button.title=project.title+" — "+activity.label;button.setAttribute("data-project-id",project.id);button.setAttribute("aria-current",project.id===current.id?"page":"false");button.setAttribute("data-execution-status",activity.status);button.setAttribute("aria-label",project.title+"，"+activity.label);button.append(element("strong",project.title),executionMark(activity.status));button.onclick=()=>options.onSelect?.(project.id);if(project.id===focusedConversation)restoreFocus=button;return button;}):[element("p",projectRows.length?"沒有符合的對話，請換個關鍵字。":"還沒有對話回報。開始工作後，代理會同步摘要。","empty")]));
+    host.replaceChildren(...(visible.length?visible.map(project=>{const button=element("button",undefined,"conversation"+(project.id===current.id?" selected":"")),activity=executionInfo(project,options.runtimeUnavailable===true);button.type="button";button.title=chatgpt?project.title:project.title+" — "+activity.label;button.setAttribute("data-project-id",project.id);button.setAttribute("aria-current",project.id===current.id?"page":"false");if(!chatgpt)button.setAttribute("data-execution-status",activity.status);button.setAttribute("aria-label",chatgpt?project.title:project.title+"，"+activity.label);button.append(element("strong",project.title));if(!chatgpt)button.append(executionMark(activity.status));button.onclick=()=>options.onSelect?.(project.id);if(project.id===focusedConversation)restoreFocus=button;return button;}):[element("p",projectRows.length?"沒有符合的對話，請換個關鍵字。":"還沒有對話回報。開始工作後，代理會同步摘要。","empty")]));
   }
   renderConversations("conversations",navigation.main);renderConversations("other-conversations",navigation.other);
   query("other-tasks").hidden=navigation.other.length===0;query("other-task-count").textContent=String(navigation.other.length);
@@ -165,8 +170,9 @@ function render(configValue,state,preferredId,options={}){
   restoreFocus?.focus({preventScroll:true});
   query("sync-state").textContent=sync.label;query("sync-state").className="sync-status "+sync.tone;query("updated").textContent="資料來源："+formattedTime(current.updated_at);query("phase").textContent=current.phase||(current.current?"工作安排":"等待對話同步");query("project-title").textContent=current.title;query("goal").textContent=current.goal||"需求目標尚未同步。";
   query("read-at").textContent="頁面讀取："+formattedReadTime(options.readAt);
-  renderExecutionBadge("project-execution",execution);renderExecutionBadge("current-execution",execution);
-  query("task-runtime-note").textContent=execution.status==="running"?"固定示範：顯示執行中圖示與不定量關卡條；本頁沒有連接即時代理。":execution.label+"；進行中條只表示已登記的關卡狀態，不推測細部百分比。";
+  query("project-execution").hidden=chatgpt;query("current-execution").hidden=chatgpt;
+  if(!chatgpt){renderExecutionBadge("project-execution",execution);renderExecutionBadge("current-execution",execution);}
+  query("task-runtime-note").textContent=chatgpt?"ChatGPT 範例的專案驗收請見上方架構。":execution.status==="running"?"固定示範：顯示執行中圖示與不定量關卡條；本頁沒有連接即時代理。":execution.label+"；進行中條只表示已登記的關卡狀態，不推測細部百分比。";
   if(current.source==="observed_public_messages")query("updated").textContent="公開摘要時間："+formattedTime(current.updated_at);
   if(current.source==="conversation_summary")query("updated").textContent="整理時間："+formattedTime(current.updated_at);
   const observation=state.observation||{};query("observation-notice").hidden=!observation.limited;
@@ -179,21 +185,34 @@ function render(configValue,state,preferredId,options={}){
   query("outcomes").replaceChildren(...(outcomes.length?outcomes.map(item=>{const article=element("article",undefined,"outcome"),body=element("div");body.append(element("h3",item.title||item.text));if(item.detail)body.append(element("p",item.detail));appendEvidence(body,item.evidence);article.append(element("span","已回報","outcome-marker"),body);return article;}):[element("p","尚未同步已完成成果；驗證後再登記，不會把工具執行當成完成。","empty")]));
   query("metrics").hidden=!current.metrics.length;query("metrics").replaceChildren(...current.metrics.map(metric=>{const card=element("article",undefined,"metric");card.append(element("strong",visualMetric(metric)),element("span",metric.label||"回報指標"));return card;}));
   query("tasks").replaceChildren(...(current.tasks.length?current.tasks.map((task,index)=>{const row=element("article",undefined,"task"),body=element("div"),unverified=current.modern&&COMPLETE_STATUSES.has(task.status)&&!evidenceRows(task.evidence).length;body.append(element("h3",task.title||"尚未命名的關卡"));if(task.detail)body.append(element("p",task.detail));if(task.group){const group=current.groups.find(group=>group.id===task.group);if(group)body.append(element("span",group.title,"task-group"));}appendEvidence(body,task.evidence);const activity=taskProgress(task,execution);if(activity)body.append(activity);row.append(element("span",String(index+1).padStart(2,"0"),"index"),body,statusBadge(task.status,unverified));return row;}):[element("p","任務關卡待建立。沒有可驗收的步驟時，不顯示 0% 或 100%。","empty")]));
-  query("agents-panel").hidden=config.show_agents===false;query("events-panel").hidden=config.show_events===false;query("sidebar").hidden=config.show_agents===false&&config.show_events===false;query("layout").className="project-grid"+(query("sidebar").hidden?" no-sidebar":"");
+  query("agents-panel").hidden=chatgpt||config.show_agents===false;query("events-panel").hidden=chatgpt||config.show_events===false;query("sidebar").hidden=chatgpt||(config.show_agents===false&&config.show_events===false);query("layout").className="project-grid"+(query("sidebar").hidden?" no-sidebar":"");
   query("agents").replaceChildren(...(current.agents.length?current.agents.map(agent=>{const row=element("article",undefined,"agent"),head=element("div",undefined,"agent-head"),body=element("div");head.append(element("h3",agent.role||agent.label||"角色待同步"),statusBadge(agent.status));body.append(element("p",text(agent.assignment)||"實際指派尚未同步。","assignment"),element("p",text(agent.current)?"目前："+agent.current:"目前工作待同步。"));if(agent.detail)body.append(element("p",agent.detail,"agent-note"));row.append(head,body);return row;}):[element("p","尚未提供可確認的工作分工；不推測主代理或子代理的指派。","empty")]));
   query("events").replaceChildren(...(current.events.length?current.events.slice(-10).reverse().map(event=>{const row=element("article",undefined,"event");row.append(element("p",event.text||event.title||"工作更新內容待同步"),element("time",formattedTime(event.at)));return row;}):[element("p","尚無重要進展回報，不重建未曾同步的歷史。","empty")]));
   query("technical").textContent=JSON.stringify({schema_version:state.schema_version,project_id:current.id,session_id:current.session_id||null,updated_at:current.updated_at||null,sync:current.sync||null,execution:{status:execution.status,source:execution.source,updated_at:execution.updated_at},agents:current.agents.map(agent=>({id:agent.id,session_id:agent.session_id||null,updated_at:agent.updated_at||null})),capacity:state.capacity||null,history_dropped:current.history_dropped||0},null,2);return selected?.id||"";
 }
 function visualMetric(metric){return(typeof metric.value==="number"||typeof metric.value==="string"?metric.value:"待同步")+(text(metric.unit)?" "+metric.unit:"");}
 async function start(){
-  let selected="",last=null,timer=null,busy=false,delay=5000,runtimeUnavailable=false,lastReadAt=null;
-  const display=()=>{if(last)selected=render(last.config,last.state,selected,{search:query("chat-search").value,runtimeUnavailable,readAt:lastReadAt,onSelect:id=>{selected=id;display();}});};
-  async function refresh(){if(busy)return;busy=true;clearTimeout(timer);query("refresh").disabled=true;const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),5000);
-    try{const responses=await Promise.all([fetch("./config.json",{cache:"no-store",signal:abort.signal}),fetch("./state.json",{cache:"no-store",signal:abort.signal})]);if(responses.some(response=>!response.ok))throw Error("示範檔暫時無法讀取");const[config,state]=await Promise.all(responses.map(response=>response.json()));if(!state||(!Array.isArray(state.projects)&&!Array.isArray(state.sessions)))throw Error("工作摘要格式無法辨識");last={config,state};runtimeUnavailable=false;lastReadAt=new Date().toISOString();display();delay=Math.min(60,Math.max(1,Number(config.poll_seconds)||5))*1000;query("connection").textContent="已載入固定示範檔・不連接本機 Codex・不會呼叫 AI";query("connection").className="";}
+  let platform="codex",last=null,busy=false,runtimeUnavailable=false,lastReadAt=null;
+  const viewState={codex:{selected:"",search:""},chatgpt:{selected:"",search:""}};
+  const search=query("chat-search"),platformButtons={codex:query("platform-codex"),chatgpt:query("platform-chatgpt")};
+  const display=()=>{
+    if(!last)return;
+    const view=viewState[platform];
+    view.selected=render(last.config,last.state,view.selected,{platform,search:view.search,runtimeUnavailable,readAt:lastReadAt,onSelect:id=>{view.selected=id;display();}});
+  };
+  for(const [key,button] of Object.entries(platformButtons))button.addEventListener("click",()=>{
+    if(platform===key)return;
+    platform=key;
+    search.value=viewState[platform].search;
+    for(const [name,control] of Object.entries(platformButtons))control.setAttribute("aria-pressed",String(name===platform));
+    display();
+  });
+  async function refresh(){if(busy)return;busy=true;query("refresh").disabled=true;const abort=new AbortController(),deadline=setTimeout(()=>abort.abort(),5000);
+    try{const responses=await Promise.all([fetch("./config.json",{cache:"no-store",signal:abort.signal}),fetch("./state.json",{cache:"no-store",signal:abort.signal})]);if(responses.some(response=>!response.ok))throw Error("示範檔暫時無法讀取");const[config,state]=await Promise.all(responses.map(response=>response.json()));if(!state||(!Array.isArray(state.projects)&&!Array.isArray(state.sessions)))throw Error("工作摘要格式無法辨識");last={config,state};runtimeUnavailable=false;lastReadAt=new Date().toISOString();display();query("connection").textContent="已載入固定示範檔・不連接本機 Codex・不會呼叫 AI";query("connection").className="";}
     catch(_error){runtimeUnavailable=true;if(last)display();query("connection").textContent=last?"示範檔讀取失敗；保留先前畫面，可按重新讀取。":"示範檔尚未載入，請按重新讀取。";query("connection").className="error";query("sync-state").textContent=last?"保留先前示範・可重新讀取":"示範檔待載入";query("sync-state").className="sync-status waiting";}
     finally{clearTimeout(deadline);busy=false;query("refresh").disabled=false;/* Static demo: load once; refresh only on an explicit click. */}}
   for(const id of["conversations","other-conversations"])query(id).addEventListener("keydown",event=>{if(!["ArrowDown","ArrowUp","Home","End"].includes(event.key))return;const buttons=[...query(id).querySelectorAll(".conversation")],index=buttons.indexOf(event.target.closest(".conversation"));if(index<0)return;event.preventDefault();const next=event.key==="Home"?0:event.key==="End"?buttons.length-1:event.key==="ArrowDown"?Math.min(index+1,buttons.length-1):Math.max(0,index-1);buttons[next]?.focus();});
-  query("refresh").addEventListener("click",refresh);query("project").addEventListener("change",()=>{selected=query("project").value;display();});query("chat-search").addEventListener("input",display);await refresh();
+  query("refresh").addEventListener("click",refresh);query("project").addEventListener("change",()=>{viewState[platform].selected=query("project").value;display();});search.addEventListener("input",()=>{viewState[platform].search=search.value;display();});await refresh();
 }
 if(typeof module!=="undefined"&&module.exports)module.exports={progress,render,taskComplete,normalizeProject,conversationGroups,executionInfo,syncInfo,safeEvidenceURL,projectPlan,planProgress,suggestionText};
 if(typeof document!=="undefined")document.addEventListener("DOMContentLoaded",start);

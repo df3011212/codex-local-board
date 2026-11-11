@@ -49,9 +49,35 @@ export function presentPlan(value){const plan=normalizeProjectPlan(value),childr
 async function boundedJSON(filename,maximum,{missing}={}){let handle;try{const expected=await fs.lstat(filename);if(!expected.isFile()||expected.isSymbolicLink()||expected.size>maximum)invalid('FILE_SIZE_OR_TYPE');handle=await fs.open(filename,constants.O_RDONLY|(constants.O_NOFOLLOW||0));const stat=await handle.stat(),after=await fs.lstat(filename);if(!stat.isFile()||after.isSymbolicLink()||stat.ino!==expected.ino||stat.dev!==expected.dev||stat.ino!==after.ino||stat.dev!==after.dev)invalid('UNTRUSTED_PATH');const buffer=Buffer.alloc(maximum+1);let count=0;while(count<buffer.length){const r=await handle.read(buffer,count,buffer.length-count,count);if(!r.bytesRead)break;count+=r.bytesRead;}if(count>maximum)invalid('FILE_SIZE_OR_TYPE');try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(buffer.subarray(0,count)).replace(/^\uFEFF/,''));}catch{invalid('JSON');}}catch(e){if(e.code==='ENOENT'&&missing!==undefined)return structuredClone(missing);throw e;}finally{await handle?.close();}}
 export async function readPlanPayload(filename){return boundedJSON(filename,PLAN_LIMITS.payloadBytes);}
 export async function readProjectPlans(filename){return validateProjectPlansStore(await boundedJSON(path.resolve(filename),PLAN_LIMITS.storeBytes,{missing:emptyProjectPlans()}));}
-async function directory(target){const absolute=path.resolve(target),root=path.parse(absolute).root;let current=root;for(const segment of path.relative(root,absolute).split(path.sep).filter(Boolean)){current=path.join(current,segment);let stat;try{stat=await fs.lstat(current);}catch(e){if(e.code!=='ENOENT')throw e;await fs.mkdir(current,{mode:0o700});stat=await fs.lstat(current);}if(!stat.isDirectory()||stat.isSymbolicLink())invalid('UNTRUSTED_PATH');}return absolute;}
+async function directory(target){
+ const absolute=path.resolve(target),root=path.parse(absolute).root;
+ let current=root;
+ for(const segment of path.relative(root,absolute).split(path.sep).filter(Boolean)){
+  current=path.join(current,segment);
+  let stat;
+  try{stat=await fs.lstat(current);}
+  catch(error){
+   if(error.code!=='ENOENT')throw error;
+   try{await fs.mkdir(current,{mode:0o700});}catch(mkdirError){if(mkdirError.code!=='EEXIST')throw mkdirError;}
+   stat=await fs.lstat(current);
+  }
+  if(!stat.isDirectory()||stat.isSymbolicLink())invalid('UNTRUSTED_PATH');
+ }
+ return absolute;
+}
 function alive(pid){try{process.kill(pid,0);return true;}catch(e){return e.code!=='ESRCH';}}
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function replacePlanFile(temporary,filename){
+ const deadline=Date.now()+500;
+ while(true){
+  try{await fs.rename(temporary,filename);return;}
+  catch(error){
+   // Windows readers or scanners can briefly block an atomic replacement.
+   if(process.platform!=='win32'||!['EPERM','EACCES','EBUSY'].includes(error.code)||Date.now()>=deadline)throw error;
+   await wait(25);
+  }
+ }
+}
 async function atomicUpdate(filename,update,{timeoutMs=10000}={}){
  if(!path.isAbsolute(filename)||path.extname(filename).toLowerCase()!=='.json'||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>30000)invalid('STATE_PATH');filename=path.resolve(filename);await directory(path.dirname(filename));
  // Resolve existing aliases before choosing the lock name, while still
@@ -59,17 +85,23 @@ async function atomicUpdate(filename,update,{timeoutMs=10000}={}){
  try{const stat=await fs.lstat(filename);if(!stat.isFile()||stat.isSymbolicLink())invalid('UNTRUSTED_PATH');filename=await fs.realpath(filename);}catch(e){if(e.code!=='ENOENT')throw e;filename=path.join(await fs.realpath(path.dirname(filename)),path.basename(filename));}
  const lock=path.join(path.dirname(filename),`.${path.basename(filename)}.plan.lock`),nonce=randomUUID(),deadline=Date.now()+timeoutMs;let handle,temporary;
  while(!handle){try{handle=await fs.open(lock,'wx',0o600);await handle.writeFile(JSON.stringify({pid:process.pid,nonce}));await handle.sync();}catch(e){if(e.code!=='EEXIST')throw e;let recovery;try{recovery=await fs.open(lock+'.recovery','wx',0o600);const owner=await boundedJSON(lock,1024);if(Number.isSafeInteger(owner.pid)&&owner.pid>0&&!alive(owner.pid)){await fs.unlink(lock);continue;}}catch{/* Unknown lock owners fail closed rather than being overwritten. */}finally{if(recovery){await recovery.close();await fs.unlink(lock+'.recovery').catch(()=>{});}}if(Date.now()>=deadline)invalid('WRITER_BUSY');await wait(25);}}
- try{const before=await readProjectPlans(filename),after=validateProjectPlansStore(await update(before)),bytes=Buffer.from(JSON.stringify(after,null,2)+'\n');if(bytes.length>PLAN_LIMITS.storeBytes)invalid('STORE_FULL');temporary=path.join(path.dirname(filename),`.${path.basename(filename)}.${randomUUID()}.tmp`);const output=await fs.open(temporary,'wx',0o600);try{await output.writeFile(bytes);await output.sync();}finally{await output.close();}await fs.rename(temporary,filename);temporary=null;return after;}
+ try{const before=await readProjectPlans(filename),after=validateProjectPlansStore(await update(before)),bytes=Buffer.from(JSON.stringify(after,null,2)+'\n');if(bytes.length>PLAN_LIMITS.storeBytes)invalid('STORE_FULL');temporary=path.join(path.dirname(filename),`.${path.basename(filename)}.${randomUUID()}.tmp`);const output=await fs.open(temporary,'wx',0o600);try{await output.writeFile(bytes);await output.sync();}finally{await output.close();}await replacePlanFile(temporary,filename);temporary=null;return after;}
  finally{await handle.close();if(temporary)await fs.unlink(temporary).catch(()=>{});const owner=await boundedJSON(lock,1024).catch(()=>null);if(owner?.nonce===nonce)await fs.unlink(lock);}
 }
 function payloadBytes(value){let encoded;try{encoded=JSON.stringify(value);}catch{invalid('JSON');}if(typeof encoded!=='string'||Buffer.byteLength(encoded)>PLAN_LIMITS.payloadBytes)invalid('PAYLOAD_FULL');}
 function patchNodes(value){keys(value,['nodes'],['nodes']);const result=list(value.nodes,PLAN_LIMITS.nodes).map(raw=>{keys(raw,['id','status','detail','evidence'],['id']);if(Object.keys(raw).length<2)invalid('EMPTY_PATCH');id(raw.id);return raw;});if(!result.length)invalid('EMPTY_PATCH');if(new Set(result.map(v=>v.id)).size!==result.length)invalid('DUPLICATE_NODE');return result;}
-export async function writeProjectPlan(filename,sessionId,payload,{patch=false,timeoutMs=10000}={}){
+export async function writeProjectPlan(filename,sessionId,payload,{patch=false,timeoutMs=10000,expectedUpdatedAt}={}){
  const session=planSessionId(sessionId);payloadBytes(payload);let replacement,updates;
+ if(expectedUpdatedAt!==undefined)timestamp(expectedUpdatedAt,true);
  if(patch)updates=patchNodes(payload);else{keys(payload,['title','goal','summary','source','nodes'],['title','goal','source','nodes']);replacement=normalizeProjectPlan({...payload,session_id:session,updated_at:now()});}
- return atomicUpdate(filename,store=>{const index=store.projects.findIndex(p=>p.session_id===session);let next;
-  if(patch){if(index<0)invalid('PLAN_NOT_FOUND');const old=store.projects[index],existing=new Map(old.nodes.map(n=>[n.id,n]));for(const change of updates)if(!existing.has(change.id))invalid('NODE_NOT_FOUND');const map=new Map(updates.map(n=>[n.id,n]));next=normalizeProjectPlan({...old,updated_at:now(),nodes:old.nodes.map(node=>map.has(node.id)?{...node,...map.get(node.id)}:node)});}
-  else next=replacement;
+ return atomicUpdate(filename,store=>{
+  const index=store.projects.findIndex(p=>p.session_id===session);
+  const old=store.projects[index];
+  if(expectedUpdatedAt!==undefined&&expectedUpdatedAt!==(old?.updated_at??null))invalid('PLAN_CONFLICT');
+  const updated_at=new Date(Math.max(Date.now(),old?Date.parse(old.updated_at)+1:0)).toISOString();
+  let next;
+  if(patch){if(!old)invalid('PLAN_NOT_FOUND');const existing=new Map(old.nodes.map(n=>[n.id,n]));for(const change of updates)if(!existing.has(change.id))invalid('NODE_NOT_FOUND');const map=new Map(updates.map(n=>[n.id,n]));next=normalizeProjectPlan({...old,updated_at,nodes:old.nodes.map(node=>map.has(node.id)?{...node,...map.get(node.id)}:node)});}
+  else next={...replacement,updated_at};
   if(index<0){if(store.projects.length>=PLAN_LIMITS.sessions)invalid('SESSION_CAPACITY');store.projects.push(next);}else store.projects[index]=next;store.updated_at=now();return store;
  },{timeoutMs});
 }
